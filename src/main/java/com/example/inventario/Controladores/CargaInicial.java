@@ -1,0 +1,137 @@
+package com.example.inventario.Controladores;
+
+import com.example.inventario.Entidades.Permiso;
+import com.example.inventario.Entidades.Rol;
+import com.example.inventario.Entidades.TipoPermiso;
+import com.example.inventario.Entidades.Usuario;
+import com.example.inventario.Repositorios.RepositorioPermiso;
+import com.example.inventario.Repositorios.RepositorioRol;
+import com.example.inventario.Repositorios.RepositorioUsuario;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+@Configuration
+public class CargaInicial {
+
+    @Bean
+    CommandLineRunner inicializar(RepositorioPermiso repoPermiso,
+                                  RepositorioRol repoRol,
+                                  RepositorioUsuario repoUsuario) {
+        return args -> {
+
+            if (repoPermiso.count() > 0) {
+                System.out.println(">>> La carga inicial ya se ejecuto antes. Se omite.");
+                return;
+            }
+
+            // ---------- PERMISOS ----------
+            crearPermiso(repoPermiso, "ARTICULO_VER", "Consultar stock", "Inventario", "/api/articulos", TipoPermiso.VER, true, 11);
+            crearPermiso(repoPermiso, "ARTICULO_GESTIONAR", "Crear y editar articulos", "Inventario", null, TipoPermiso.EDITAR, false, 12);
+            crearPermiso(repoPermiso, "STOCK_AJUSTAR", "Ajuste de inventario", "Inventario", "/api/ajustes", TipoPermiso.CREAR, true, 13);
+
+            crearPermiso(repoPermiso, "INGRESO_VER", "Ver recepciones", "Recepciones", "/api/ingresos", TipoPermiso.VER, true, 21);
+            crearPermiso(repoPermiso, "INGRESO_CREAR", "Registrar recepcion", "Recepciones", null, TipoPermiso.CREAR, false, 22);
+
+            crearPermiso(repoPermiso, "SOLICITUD_CREAR", "Solicitar materiales", "Despachos", "/api/solicitudes", TipoPermiso.CREAR, true, 31);
+            crearPermiso(repoPermiso, "SOLICITUD_VER_PROPIAS", "Mis solicitudes", "Despachos", "/api/solicitudes/mias", TipoPermiso.VER, true, 32);
+            crearPermiso(repoPermiso, "SALIDA_VER", "Ver despachos", "Despachos", "/api/salidas", TipoPermiso.VER, true, 33);
+            crearPermiso(repoPermiso, "SALIDA_APROBAR", "Aprobar salida", "Despachos", null, TipoPermiso.APROBAR, false, 34);
+            crearPermiso(repoPermiso, "SALIDA_ATENDER", "Despachar materiales", "Despachos", null, TipoPermiso.CREAR, false, 35);
+
+            crearPermiso(repoPermiso, "TRANSFER_VER", "Ver transferencias", "Transferencias", "/api/transferencias", TipoPermiso.VER, true, 41);
+            crearPermiso(repoPermiso, "TRANSFER_CREAR", "Registrar transferencia", "Transferencias", null, TipoPermiso.CREAR, false, 42);
+
+            crearPermiso(repoPermiso, "KARDEX_VER", "Consultar Kardex", "Kardex y reportes", "/api/kardex", TipoPermiso.VER, true, 51);
+            crearPermiso(repoPermiso, "REPORTE_STOCK_MINIMO", "Articulos bajo minimo", "Kardex y reportes", "/api/reportes/minimos", TipoPermiso.VER, true, 52);
+            crearPermiso(repoPermiso, "REPORTE_VALORIZADO", "Inventario valorizado", "Kardex y reportes", "/api/reportes/valorizado", TipoPermiso.VER, true, 53);
+            crearPermiso(repoPermiso, "REPORTE_VENCIMIENTOS", "Lotes por vencer", "Kardex y reportes", "/api/reportes/vencimientos", TipoPermiso.VER, true, 54);
+
+            crearPermiso(repoPermiso, "MAESTRO_GESTIONAR", "Categorias, unidades y ubicaciones", "Maestros", "/api/maestros", TipoPermiso.VER, true, 61);
+            crearPermiso(repoPermiso, "PROVEEDOR_GESTIONAR", "Proveedores", "Maestros", "/api/proveedores", TipoPermiso.VER, true, 62);
+
+            crearPermiso(repoPermiso, "USUARIO_GESTIONAR", "Usuarios", "Seguridad", "/api/usuarios", TipoPermiso.VER, true, 71);
+            crearPermiso(repoPermiso, "ROL_GESTIONAR", "Roles y permisos", "Seguridad", "/api/roles", TipoPermiso.VER, true, 72);
+
+            // Mapa para buscar permisos por codigo
+            Map<String, Permiso> p = new HashMap<>();
+            repoPermiso.findAll().forEach(x -> p.put(x.getCodigo(), x));
+
+            // ---------- ROLES ----------
+            crearRol(repoRol, "ADMINISTRADOR", "Acceso total y gestion de usuarios",
+                    new HashSet<>(p.values()));
+
+            crearRol(repoRol, "JEFE_ALMACEN", "Supervisa, aprueba salidas y ajusta inventario",
+                    seleccionar(p, "ARTICULO_VER", "ARTICULO_GESTIONAR", "STOCK_AJUSTAR",
+                            "INGRESO_VER", "INGRESO_CREAR", "SALIDA_VER", "SALIDA_APROBAR",
+                            "SALIDA_ATENDER", "TRANSFER_VER", "TRANSFER_CREAR", "KARDEX_VER",
+                            "REPORTE_STOCK_MINIMO", "REPORTE_VALORIZADO", "REPORTE_VENCIMIENTOS",
+                            "MAESTRO_GESTIONAR", "PROVEEDOR_GESTIONAR"));
+
+            crearRol(repoRol, "ALMACENERO", "Ejecuta movimientos fisicos de almacen",
+                    seleccionar(p, "ARTICULO_VER", "INGRESO_VER", "INGRESO_CREAR",
+                            "SALIDA_VER", "SALIDA_ATENDER", "TRANSFER_VER", "TRANSFER_CREAR",
+                            "KARDEX_VER", "REPORTE_STOCK_MINIMO", "REPORTE_VENCIMIENTOS"));
+
+            crearRol(repoRol, "SOLICITANTE", "Solicita materiales para produccion",
+                    seleccionar(p, "ARTICULO_VER", "SOLICITUD_CREAR", "SOLICITUD_VER_PROPIAS"));
+
+            crearRol(repoRol, "COSTOS", "Consulta Kardex y reportes valorizados",
+                    seleccionar(p, "ARTICULO_VER", "INGRESO_VER", "KARDEX_VER",
+                            "REPORTE_VALORIZADO", "REPORTE_STOCK_MINIMO"));
+
+            // ---------- USUARIO ADMINISTRADOR ----------
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+            Usuario admin = new Usuario();
+            admin.setUsername("admin");
+            admin.setPasswordHash(encoder.encode("Admin2026*"));
+            admin.setNombreCompleto("Administrador del sistema");
+            admin.setEmail("admin@electromecanicaandina.com");
+            admin.getRoles().add(repoRol.findByNombre("ADMINISTRADOR").orElseThrow());
+            repoUsuario.save(admin);
+
+            System.out.println(">>> CARGA INICIAL COMPLETADA");
+            System.out.println(">>> Permisos: " + repoPermiso.count());
+            System.out.println(">>> Roles: " + repoRol.count());
+            System.out.println(">>> Usuarios: " + repoUsuario.count());
+        };
+    }
+
+    private void crearPermiso(RepositorioPermiso repo, String codigo, String nombre,
+                              String modulo, String ruta, TipoPermiso tipo,
+                              boolean menu, int orden) {
+        Permiso permiso = new Permiso();
+        permiso.setCodigo(codigo);
+        permiso.setNombre(nombre);
+        permiso.setModulo(modulo);
+        permiso.setRuta(ruta);
+        permiso.setTipo(tipo);
+        permiso.setMostrarEnMenu(menu);
+        permiso.setOrden(orden);
+        repo.save(permiso);
+    }
+
+    private void crearRol(RepositorioRol repo, String nombre, String descripcion,
+                          Set<Permiso> permisos) {
+        Rol rol = new Rol();
+        rol.setNombre(nombre);
+        rol.setDescripcion(descripcion);
+        rol.setPermisos(permisos);
+        repo.save(rol);
+    }
+
+    private Set<Permiso> seleccionar(Map<String, Permiso> mapa, String... codigos) {
+        Set<Permiso> set = new HashSet<>();
+        for (String codigo : codigos) {
+            set.add(mapa.get(codigo));
+        }
+        return set;
+    }
+}

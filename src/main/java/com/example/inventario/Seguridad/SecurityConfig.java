@@ -1,0 +1,92 @@
+package com.example.inventario.Seguridad;
+
+import com.example.inventario.Controladores.JwtFiltro;
+import com.example.inventario.Servicios.DetalleUsuarioService;
+import tools.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final JwtFiltro jwtFiltro;
+    private final DetalleUsuarioService detalleUsuarioService;
+
+    public SecurityConfig(JwtFiltro jwtFiltro,
+                          DetalleUsuarioService detalleUsuarioService) {
+        this.jwtFiltro = jwtFiltro;
+        this.detalleUsuarioService = detalleUsuarioService;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider proveedor = new DaoAuthenticationProvider(detalleUsuarioService);
+        proveedor.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(proveedor);
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        http
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/login").permitAll()
+
+                .requestMatchers("/api/permisos/**").hasAuthority("ROL_GESTIONAR")
+                .requestMatchers("/api/roles/**").hasAuthority("ROL_GESTIONAR")
+                .requestMatchers("/api/usuarios/**").hasAuthority("USUARIO_GESTIONAR")
+                .requestMatchers("/api/kardex/**").hasAuthority("KARDEX_VER")
+                .requestMatchers("/api/articulos/**").hasAuthority("ARTICULO_VER")
+
+                .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, e) -> {
+                    res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    res.setCharacterEncoding("UTF-8");
+                    Map<String, Object> cuerpo = new LinkedHashMap<>();
+                    cuerpo.put("estado", 401);
+                    cuerpo.put("mensaje", "Token ausente, invalido o expirado");
+                    res.getWriter().write(mapper.writeValueAsString(cuerpo));
+                })
+                .accessDeniedHandler((req, res, e) -> {
+                    res.setStatus(HttpStatus.FORBIDDEN.value());
+                    res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    res.setCharacterEncoding("UTF-8");
+                    Map<String, Object> cuerpo = new LinkedHashMap<>();
+                    cuerpo.put("estado", 403);
+                    cuerpo.put("mensaje", "No tiene permiso para esta operacion");
+                    res.getWriter().write(mapper.writeValueAsString(cuerpo));
+                })
+            )
+            .addFilterBefore(jwtFiltro, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}
