@@ -1,0 +1,31 @@
+package com.example.inventario.DTOs;
+
+import com.example.inventario.Entidades.MovimientoInventario;
+import com.example.inventario.Entidades.TipoMovimiento;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public record MovimientoResponseDTO(
+        Long id,
+        TipoMovimiento tipoMovimiento,
+        Long productoId,
+        Long loteId,
+        String codigoLote,
+        BigDecimal cantidad,
+        Long ubicacionOrigenId,
+        Long ubicacionDestinoId,
+        LocalDateTime fechaMovimiento) {
+
+    public static MovimientoResponseDTO desde(MovimientoInventario movimiento) {
+        return new MovimientoResponseDTO(
+                movimiento.getId(),
+                movimiento.getTipoMovimiento(),
+                movimiento.getProducto().getId(),
+                movimiento.getLote().getId(),
+                movimiento.getLote().getCodigoLote(),
+                movimiento.getCantidad(),
+                movimiento.getUbicacionOrigen() == null ? null : movimiento.getUbicacionOrigen().getId(),
+                movimiento.getUbicacionDestino() == null ? null : movimiento.getUbicacionDestino().getId(),
+                movimiento.getFechaMovimiento());
+    }
+}
