@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public record MovimientoResponseDTO(
         Long id,
         TipoMovimiento tipoMovimiento,
-        Long productoId,
+        Integer articuloId,
         Long loteId,
         String codigoLote,
         BigDecimal cantidad,
@@ -20,7 +20,7 @@ public record MovimientoResponseDTO(
         return new MovimientoResponseDTO(
                 movimiento.getId(),
                 movimiento.getTipoMovimiento(),
-                movimiento.getProducto().getId(),
+                movimiento.getArticulo().getIdArticulo(),
                 movimiento.getLote().getId(),
                 movimiento.getLote().getCodigoLote(),
                 movimiento.getCantidad(),

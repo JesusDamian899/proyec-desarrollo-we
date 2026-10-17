@@ -7,8 +7,8 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "lote", uniqueConstraints = @UniqueConstraint(
-        name = "uk_lote_producto_codigo_ubicacion",
-        columnNames = {"producto_id", "codigo_lote", "ubicacion_id"}))
+        name = "uk_lote_articulo_codigo_ubicacion",
+        columnNames = {"articulo_id", "codigo_lote", "ubicacion_id"}))
 public class Lote {
 
     @Id
@@ -19,8 +19,8 @@ public class Lote {
     private String codigoLote;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "producto_id", nullable = false)
-    private Producto producto;
+    @JoinColumn(name = "articulo_id", nullable = false)
+    private Articulo articulo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "ubicacion_id", nullable = false)
@@ -46,8 +46,8 @@ public class Lote {
     public void setId(Long id) { this.id = id; }
     public String getCodigoLote() { return codigoLote; }
     public void setCodigoLote(String codigoLote) { this.codigoLote = codigoLote; }
-    public Producto getProducto() { return producto; }
-    public void setProducto(Producto producto) { this.producto = producto; }
+    public Articulo getArticulo() { return articulo; }
+    public void setArticulo(Articulo articulo) { this.articulo = articulo; }
     public Ubicacion getUbicacion() { return ubicacion; }
     public void setUbicacion(Ubicacion ubicacion) { this.ubicacion = ubicacion; }
     public BigDecimal getCantidad() { return cantidad; }

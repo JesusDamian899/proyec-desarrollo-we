@@ -41,8 +41,8 @@ public class AlmacenController {
         return almacenService.listarLotesProximosAVencer();
     }
 
-    @GetMapping("/lotes/producto/{productoId}")
-    public List<Lote> listarLotesPorProducto(@PathVariable Long productoId) {
-        return almacenService.listarLotesPorProducto(productoId);
+    @GetMapping("/lotes/articulo/{articuloId}")
+    public List<Lote> listarLotesPorArticulo(@PathVariable Integer articuloId) {
+        return almacenService.listarLotesPorArticulo(articuloId);
     }
 }

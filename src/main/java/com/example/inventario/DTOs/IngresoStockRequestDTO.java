@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record IngresoStockRequestDTO(
-        @NotNull @Positive Long productoId,
+        @NotNull @Positive Integer articuloId,
         @NotBlank @Size(max = 80) String codigoLote,
         @NotNull @Positive BigDecimal cantidad,
         @NotNull @FutureOrPresent LocalDate fechaVencimiento,

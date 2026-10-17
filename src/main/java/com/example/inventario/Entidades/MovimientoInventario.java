@@ -17,8 +17,8 @@ public class MovimientoInventario {
     private TipoMovimiento tipoMovimiento;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "producto_id", nullable = false)
-    private Producto producto;
+    @JoinColumn(name = "articulo_id", nullable = false)
+    private Articulo articulo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lote_id", nullable = false)
@@ -45,8 +45,8 @@ public class MovimientoInventario {
     public void setId(Long id) { this.id = id; }
     public TipoMovimiento getTipoMovimiento() { return tipoMovimiento; }
     public void setTipoMovimiento(TipoMovimiento tipoMovimiento) { this.tipoMovimiento = tipoMovimiento; }
-    public Producto getProducto() { return producto; }
-    public void setProducto(Producto producto) { this.producto = producto; }
+    public Articulo getArticulo() { return articulo; }
+    public void setArticulo(Articulo articulo) { this.articulo = articulo; }
     public Lote getLote() { return lote; }
     public void setLote(Lote lote) { this.lote = lote; }
     public BigDecimal getCantidad() { return cantidad; }
