@@ -147,17 +147,23 @@ public class AlmacenService {
     }
 
     @Transactional(readOnly = true)
-    public List<Lote> listarLotesProximosAVencer() {
+    public List<LoteResponseDTO> listarLotesProximosAVencer() {
         LocalDate hoy = LocalDate.now();
-        return loteRepository.buscarProximosAVencer(hoy, hoy.plusDays(DIAS_PROXIMO_VENCIMIENTO));
+        return loteRepository.buscarProximosAVencer(hoy, hoy.plusDays(DIAS_PROXIMO_VENCIMIENTO))
+                .stream()
+                .map(LoteResponseDTO::desde)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Lote> listarLotesPorArticulo(Integer articuloId) {
+    public List<LoteResponseDTO> listarLotesPorArticulo(Integer articuloId) {
         if (!articuloRepository.existsById(articuloId)) {
             throw new RecursoNoEncontradoException("Articulo no encontrado");
         }
-        return loteRepository.findByArticulo_IdArticuloOrderByFechaVencimientoAsc(articuloId);
+        return loteRepository.findByArticulo_IdArticuloOrderByFechaVencimientoAsc(articuloId)
+                .stream()
+                .map(LoteResponseDTO::desde)
+                .toList();
     }
 
     private MovimientoInventario crearMovimiento(TipoMovimiento tipo, Articulo articulo,

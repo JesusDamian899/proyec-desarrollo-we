@@ -6,6 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -34,6 +37,30 @@ public class ManejadorErrores {
 
     @ExceptionHandler(ReglaNegocioException.class)
 public ResponseEntity<Map<String, Object>> reglaNegocio(ReglaNegocioException e) {
-    return armar(HttpStatus.CONFLICT, e.getMessage());
-}
+        return armar(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> validacion(MethodArgumentNotValidException e) {
+        String detalle = e.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .reduce((a, b) -> a + "; " + b)
+                .orElse("Error de validacion en la peticion");
+        return armar(HttpStatus.BAD_REQUEST, detalle);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> cuerpoInvalido(HttpMessageNotReadableException e) {
+        return armar(HttpStatus.BAD_REQUEST, "Cuerpo de la peticion invalido o ausente");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> metodoNoSoportado(HttpRequestMethodNotSupportedException e) {
+        return armar(HttpStatus.METHOD_NOT_ALLOWED, "Metodo HTTP " + e.getMethod() + " no permitido para esta ruta");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> general(Exception e) {
+        return armar(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage() != null ? e.getMessage() : "Error interno del servidor");
+    }
 }

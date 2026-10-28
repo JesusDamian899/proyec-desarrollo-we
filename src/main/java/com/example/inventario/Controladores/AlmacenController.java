@@ -1,7 +1,6 @@
 package com.example.inventario.Controladores;
 
 import com.example.inventario.DTOs.*;
-import com.example.inventario.Entidades.Lote;
 import com.example.inventario.Servicios.AlmacenService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/almacen")
+@RequestMapping({"/api/almacen", "/api"})
+@CrossOrigin(origins = "*")
 public class AlmacenController {
 
     private final AlmacenService almacenService;
@@ -37,12 +37,12 @@ public class AlmacenController {
     }
 
     @GetMapping("/lotes/vencimiento")
-    public List<Lote> listarLotesProximosAVencer() {
+    public List<LoteResponseDTO> listarLotesProximosAVencer() {
         return almacenService.listarLotesProximosAVencer();
     }
 
     @GetMapping("/lotes/articulo/{articuloId}")
-    public List<Lote> listarLotesPorArticulo(@PathVariable Integer articuloId) {
+    public List<LoteResponseDTO> listarLotesPorArticulo(@PathVariable Integer articuloId) {
         return almacenService.listarLotesPorArticulo(articuloId);
     }
 }

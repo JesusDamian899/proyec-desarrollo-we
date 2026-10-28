@@ -13,7 +13,7 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT l FROM Lote l WHERE l.articulo.idArticulo = :articuloId "
-            + "AND l.cantidad > 0 ORDER BY l.fechaVencimiento ASC, l.id ASC")
+            + "AND l.cantidad > 0 ORDER BY l.fechaIngreso ASC, l.id ASC")
     List<Lote> buscarDisponiblesPorArticuloFIFO(@Param("articuloId") Integer articuloId);
 
     Optional<Lote> findByArticulo_IdArticuloAndCodigoLoteAndUbicacion_Id(
