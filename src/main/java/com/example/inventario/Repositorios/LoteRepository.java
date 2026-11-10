@@ -27,4 +27,8 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
 
     @EntityGraph(attributePaths = {"articulo", "ubicacion"})
     List<Lote> findByArticulo_IdArticuloOrderByFechaVencimientoAsc(Integer articuloId);
+
+    @EntityGraph(attributePaths = {"articulo", "ubicacion"})
+    List<Lote> findAllByOrderByFechaVencimientoAsc();
 }
+

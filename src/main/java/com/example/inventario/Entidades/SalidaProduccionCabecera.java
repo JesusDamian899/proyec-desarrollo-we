@@ -1,6 +1,7 @@
 package com.example.inventario.Entidades;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -17,7 +18,7 @@ public class SalidaProduccionCabecera {
     private String ordenProduccion;
 
     @Column(name = "fecha_salida")
-    private LocalDateTime fechaSalida;
+    private LocalDateTime fechaSalida = LocalDateTime.now();
 
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
@@ -31,7 +32,7 @@ public class SalidaProduccionCabecera {
     private String estado = "COMPLETADO";
 
     @OneToMany(mappedBy = "salidaCabecera", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SalidaProduccionDetalle> detalles;
+    private List<SalidaProduccionDetalle> detalles = new ArrayList<>();
 
     public SalidaProduccionCabecera() {}
 

@@ -2,6 +2,7 @@ package com.example.inventario.Entidades;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,6 +21,7 @@ public class TransferenciaDetalle {
     @Column(name = "id_detalle_transferencia")
     private Integer idDetalleTransferencia;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_transferencia", nullable = false)
     private TransferenciaCabecera transferenciaCabecera;

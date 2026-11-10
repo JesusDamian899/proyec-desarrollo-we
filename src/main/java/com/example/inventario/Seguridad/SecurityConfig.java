@@ -20,8 +20,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -50,6 +54,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
@@ -68,7 +84,24 @@ public class SecurityConfig {
                 .requestMatchers("/api/roles/**").hasAuthority("ROL_GESTIONAR")
                 .requestMatchers("/api/usuarios/**").hasAuthority("USUARIO_GESTIONAR")
                 .requestMatchers("/api/kardex/**").hasAuthority("KARDEX_VER")
-                .requestMatchers("/api/articulos/**").hasAuthority("ARTICULO_VER")
+
+                .requestMatchers(HttpMethod.GET, "/api/articulos/**").hasAuthority("ARTICULO_VER")
+                .requestMatchers("/api/articulos/**").hasAnyAuthority("ARTICULO_GESTIONAR", "ARTICULO_VER")
+
+                .requestMatchers(HttpMethod.GET, "/api/almacen/ingresos/**", "/api/ingresos/**")
+                    .hasAnyAuthority("INGRESO_VER", "INGRESO_CREAR")
+                .requestMatchers(HttpMethod.POST, "/api/almacen/ingresos/**", "/api/ingresos/**")
+                    .hasAuthority("INGRESO_CREAR")
+
+                .requestMatchers(HttpMethod.GET, "/api/almacen/salidas/**", "/api/salidas/**")
+                    .hasAnyAuthority("SALIDA_VER", "SALIDA_ATENDER", "SOLICITUD_VER_PROPIAS")
+                .requestMatchers(HttpMethod.POST, "/api/almacen/salidas/**", "/api/salidas/**")
+                    .hasAnyAuthority("SALIDA_ATENDER", "SALIDA_APROBAR", "SOLICITUD_CREAR")
+
+                .requestMatchers(HttpMethod.GET, "/api/almacen/transferencias/**", "/api/transferencias/**")
+                    .hasAnyAuthority("TRANSFER_VER", "TRANSFER_CREAR")
+                .requestMatchers(HttpMethod.POST, "/api/almacen/transferencias/**", "/api/transferencias/**")
+                    .hasAuthority("TRANSFER_CREAR")
 
                 .anyRequest().authenticated()
             )

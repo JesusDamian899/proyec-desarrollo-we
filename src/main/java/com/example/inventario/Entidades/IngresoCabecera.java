@@ -1,6 +1,7 @@
 package com.example.inventario.Entidades;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -14,14 +15,14 @@ public class IngresoCabecera {
     private Integer idIngreso;
 
     @ManyToOne
-    @JoinColumn(name = "id_proveedor", nullable = false)
+    @JoinColumn(name = "id_proveedor", nullable = true)
     private Proveedor proveedor;
 
     @Column(name = "documento_referencia", nullable = false, length = 50)
     private String documentoReferencia;
 
     @Column(name = "fecha_recepcion")
-    private LocalDateTime fechaRecepcion;
+    private LocalDateTime fechaRecepcion = LocalDateTime.now();
 
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
@@ -32,7 +33,7 @@ public class IngresoCabecera {
 
     // ¡La relación que une la Cabecera con sus Detalles!
     @OneToMany(mappedBy = "ingresoCabecera", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<IngresoDetalle> detalles;
+    private List<IngresoDetalle> detalles = new ArrayList<>();
 
     public IngresoCabecera() {}
 

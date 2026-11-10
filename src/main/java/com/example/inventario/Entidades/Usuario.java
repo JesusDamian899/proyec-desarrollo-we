@@ -1,6 +1,7 @@
 package com.example.inventario.Entidades;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "usuario")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Usuario {
 
     @Id
@@ -19,6 +21,7 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
@@ -37,6 +40,7 @@ public class Usuario {
     @Column(name = "ultimo_acceso")
     private LocalDateTime ultimoAcceso;
 
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "usuario_rol",

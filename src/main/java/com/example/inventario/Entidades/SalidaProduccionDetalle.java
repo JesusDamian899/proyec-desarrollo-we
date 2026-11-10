@@ -2,6 +2,7 @@ package com.example.inventario.Entidades;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,6 +21,7 @@ public class SalidaProduccionDetalle {
     @Column(name = "id_detalle_salida")
     private Integer idDetalleSalida;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_salida", nullable = false)
     private SalidaProduccionCabecera salidaCabecera;
@@ -30,7 +32,7 @@ public class SalidaProduccionDetalle {
 
     // Esta relación es el secreto para mantener la trazabilidad del Lote (FIFO)
     @ManyToOne
-    @JoinColumn(name = "id_detalle_ingreso", nullable = false)
+    @JoinColumn(name = "id_detalle_ingreso", nullable = true)
     private IngresoDetalle loteIngreso;
 
     @Column(name = "cantidad_entregada", nullable = false, precision = 10, scale = 2)

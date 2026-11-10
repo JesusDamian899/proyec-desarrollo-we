@@ -32,15 +32,18 @@ public class CategoriaService {
 
     
     public Categoria actualizar(Integer id, Categoria categoriaActualizada) {
-       
+
         return categoriaRepository.findById(id).map(catExistente -> {
             catExistente.setNombre(categoriaActualizada.getNombre());
             return categoriaRepository.save(catExistente);
-        }).orElseThrow(() -> new RuntimeException("Categoría no encontrada con el ID: " + id));
+        }).orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada con el ID: " + id));
     }
 
 
     public void eliminar(Integer id) {
+        if (!categoriaRepository.existsById(id)) {
+            throw new RecursoNoEncontradoException("Categoría no encontrada con el ID: " + id);
+        }
         categoriaRepository.deleteById(id);
     }
 }

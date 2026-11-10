@@ -4,6 +4,7 @@ package com.example.inventario.Entidades;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -23,6 +24,7 @@ public class IngresoDetalle {
     private Integer idDetalleIngreso;
 
     // Vínculo hacia atrás a la cabecera
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_ingreso", nullable = false)
     private IngresoCabecera ingresoCabecera;

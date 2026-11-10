@@ -36,8 +36,13 @@ public class ManejadorErrores {
     }
 
     @ExceptionHandler(ReglaNegocioException.class)
-public ResponseEntity<Map<String, Object>> reglaNegocio(ReglaNegocioException e) {
+    public ResponseEntity<Map<String, Object>> reglaNegocio(ReglaNegocioException e) {
         return armar(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> argumentoInvalido(IllegalArgumentException e) {
+        return armar(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -64,3 +69,4 @@ public ResponseEntity<Map<String, Object>> reglaNegocio(ReglaNegocioException e)
         return armar(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage() != null ? e.getMessage() : "Error interno del servidor");
     }
 }
+

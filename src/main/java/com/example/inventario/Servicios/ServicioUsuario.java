@@ -6,4 +6,5 @@ public interface ServicioUsuario {
     List<UsuarioResponse> listar();
     UsuarioResponse buscarPorId(Long id);
     UsuarioResponse guardar(UsuarioRequest peticion);
+    UsuarioResponse cambiarEstado(Long id, boolean activo);
 }

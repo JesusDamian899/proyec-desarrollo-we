@@ -39,13 +39,30 @@ public class ImplServicioUsuario implements ServicioUsuario {
             throw new ReglaNegocioException("El usuario '" + username + "' ya existe");
         }
 
+        String email = (peticion.email() != null && !peticion.email().isBlank())
+                ? peticion.email().trim()
+                : null;
+        if (email != null && repositorio.existsByEmailIgnoreCase(email)) {
+            throw new ReglaNegocioException("El correo '" + email + "' ya esta registrado");
+        }
+
         Usuario usuario = new Usuario();
         usuario.setUsername(username);
         usuario.setPasswordHash(encoder.encode(peticion.password()));
         usuario.setNombreCompleto(peticion.nombreCompleto().trim());
-        usuario.setEmail(peticion.email());
+        usuario.setEmail(email);
         usuario.setRoles(resolverRoles(peticion.rolesIds()));
 
+        return aDto(repositorio.save(usuario));
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse cambiarEstado(Long id, boolean activo) {
+        Usuario usuario = repositorio.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "El usuario " + id + " no existe"));
+        usuario.setActivo(activo);
         return aDto(repositorio.save(usuario));
     }
 

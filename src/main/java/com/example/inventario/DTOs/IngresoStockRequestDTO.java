@@ -9,5 +9,17 @@ public record IngresoStockRequestDTO(
         @NotBlank @Size(max = 80) String codigoLote,
         @NotNull @Positive BigDecimal cantidad,
         @NotNull @FutureOrPresent LocalDate fechaVencimiento,
-        @NotNull @Positive Long ubicacionId) {
+        @NotNull @Positive Long ubicacionId,
+        Integer proveedorId,
+        @Size(max = 50) String documentoReferencia) {
+
+    public IngresoStockRequestDTO(
+            Integer articuloId,
+            String codigoLote,
+            BigDecimal cantidad,
+            LocalDate fechaVencimiento,
+            Long ubicacionId) {
+        this(articuloId, codigoLote, cantidad, fechaVencimiento, ubicacionId, null, null);
+    }
 }
+

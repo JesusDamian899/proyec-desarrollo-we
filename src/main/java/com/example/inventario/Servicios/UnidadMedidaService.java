@@ -36,11 +36,14 @@ public class UnidadMedidaService {
             unidadExistente.setNombre(datosActualizados.getNombre());
             unidadExistente.setAbreviatura(datosActualizados.getAbreviatura());
             return unidadMedidaRepository.save(unidadExistente);
-        }).orElseThrow(() -> new RuntimeException("Unidad de medida no encontrada con ID: " + id));
+        }).orElseThrow(() -> new RecursoNoEncontradoException("Unidad de medida no encontrada con ID: " + id));
     }
 
     // 5. Eliminar la unidad de medida por su ID
     public void eliminar(Integer id) {
+        if (!unidadMedidaRepository.existsById(id)) {
+            throw new RecursoNoEncontradoException("Unidad de medida no encontrada con ID: " + id);
+        }
         unidadMedidaRepository.deleteById(id);
     }
 }
