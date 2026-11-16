@@ -77,6 +77,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/favicon.ico", "/assets/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
 

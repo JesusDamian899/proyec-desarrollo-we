@@ -103,24 +103,23 @@ public class CargaInicial {
                         seleccionar(p, "ARTICULO_VER", "INGRESO_VER", "KARDEX_VER",
                                 "REPORTE_VALORIZADO", "REPORTE_STOCK_MINIMO"));
 
-                // ---------- USUARIOS INICIALES ----------
-                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-                crearUsuario(repoUsuario, repoRol, encoder, "admin", "Admin2026*",
-                        "Administrador del Sistema", "admin@electromecanicaandina.com", "ADMINISTRADOR");
-                crearUsuario(repoUsuario, repoRol, encoder, "jefe.almacen", "Jefe2026*",
-                        "Carlos Mendoza (Jefe de Almacen)", "cmendoza@electromecanicaandina.com", "JEFE_ALMACEN");
-                crearUsuario(repoUsuario, repoRol, encoder, "almacenero", "Almacen2026*",
-                        "Luis Paredes (Operador Almacen)", "lparedes@electromecanicaandina.com", "ALMACENERO");
-                crearUsuario(repoUsuario, repoRol, encoder, "solicitante", "Solicita2026*",
-                        "Ana Torres (Supervisora Produccion)", "atorres@electromecanicaandina.com", "SOLICITANTE");
-                crearUsuario(repoUsuario, repoRol, encoder, "costos", "Costos2026*",
-                        "Jorge Ramirez (Analista de Costos)", "jramirez@electromecanicaandina.com", "COSTOS");
-
-                System.out.println(">>> CARGA INICIAL DE SEGURIDAD COMPLETADA");
+                System.out.println(">>> CARGA INICIAL DE PERMISOS Y ROLES COMPLETADA");
             } else {
-                System.out.println(">>> La carga inicial de seguridad ya se ejecuto antes. Se omite.");
+                System.out.println(">>> Los permisos y roles ya existen en la BD.");
             }
+
+            // Asegurar siempre que los 5 usuarios iniciales existan y esten activos con sus credenciales
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            asegurarUsuario(repoUsuario, repoRol, encoder, "admin", "Admin2026*",
+                    "Administrador del Sistema", "admin@electromecanicaandina.com", "ADMINISTRADOR");
+            asegurarUsuario(repoUsuario, repoRol, encoder, "jefe.almacen", "Jefe2026*",
+                    "Carlos Mendoza (Jefe de Almacen)", "cmendoza@electromecanicaandina.com", "JEFE_ALMACEN");
+            asegurarUsuario(repoUsuario, repoRol, encoder, "almacenero", "Almacen2026*",
+                    "Luis Paredes (Operador Almacen)", "lparedes@electromecanicaandina.com", "ALMACENERO");
+            asegurarUsuario(repoUsuario, repoRol, encoder, "solicitante", "Solicita2026*",
+                    "Ana Torres (Supervisora Produccion)", "atorres@electromecanicaandina.com", "SOLICITANTE");
+            asegurarUsuario(repoUsuario, repoRol, encoder, "costos", "Costos2026*",
+                    "Jorge Ramirez (Analista de Costos)", "jramirez@electromecanicaandina.com", "COSTOS");
 
             // ---------- CATALOGOS MAESTROS INICIALES ----------
             if (repoCategoria.count() == 0) {
@@ -189,19 +188,23 @@ public class CargaInicial {
         };
     }
 
-    private void crearUsuario(RepositorioUsuario repoUsuario, RepositorioRol repoRol,
-                              BCryptPasswordEncoder encoder, String username, String rawPassword,
-                              String nombreCompleto, String email, String rolNombre) {
-        if (repoUsuario.findByUsername(username).isEmpty()) {
-            Usuario u = new Usuario();
-            u.setUsername(username);
-            u.setPasswordHash(encoder.encode(rawPassword));
-            u.setNombreCompleto(nombreCompleto);
+    private void asegurarUsuario(RepositorioUsuario repoUsuario, RepositorioRol repoRol,
+                                 BCryptPasswordEncoder encoder, String username, String rawPassword,
+                                 String nombreCompleto, String email, String rolNombre) {
+        Usuario u = repoUsuario.findByUsername(username).orElseGet(Usuario::new);
+        u.setUsername(username);
+        u.setPasswordHash(encoder.encode(rawPassword));
+        u.setNombreCompleto(nombreCompleto);
+        if (u.getEmail() == null || u.getEmail().isBlank()) {
             u.setEmail(email);
-            u.setActivo(true);
-            u.getRoles().add(repoRol.findByNombre(rolNombre).orElseThrow());
-            repoUsuario.save(u);
         }
+        u.setActivo(true);
+        repoRol.findByNombre(rolNombre).ifPresent(rol -> {
+            if (u.getRoles().stream().noneMatch(r -> r.getNombre().equals(rolNombre))) {
+                u.getRoles().add(rol);
+            }
+        });
+        repoUsuario.save(u);
     }
 
     private Articulo crearArticuloBase(ArticuloRepository repo, String codigo, String descripcion,
