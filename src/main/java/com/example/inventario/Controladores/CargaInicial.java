@@ -191,7 +191,7 @@ public class CargaInicial {
     private void asegurarUsuario(RepositorioUsuario repoUsuario, RepositorioRol repoRol,
                                  BCryptPasswordEncoder encoder, String username, String rawPassword,
                                  String nombreCompleto, String email, String rolNombre) {
-        Usuario u = repoUsuario.findByUsername(username).orElseGet(Usuario::new);
+        Usuario u = repoUsuario.buscarConRolesYPermisos(username).orElseGet(Usuario::new);
         u.setUsername(username);
         u.setPasswordHash(encoder.encode(rawPassword));
         u.setNombreCompleto(nombreCompleto);
@@ -199,11 +199,16 @@ public class CargaInicial {
             u.setEmail(email);
         }
         u.setActivo(true);
+        Set<Rol> rolesActualizados = new HashSet<>();
+        if (u.getRoles() != null) {
+            rolesActualizados.addAll(u.getRoles());
+        }
         repoRol.findByNombre(rolNombre).ifPresent(rol -> {
-            if (u.getRoles().stream().noneMatch(r -> r.getNombre().equals(rolNombre))) {
-                u.getRoles().add(rol);
+            if (rolesActualizados.stream().noneMatch(r -> r.getNombre().equals(rolNombre))) {
+                rolesActualizados.add(rol);
             }
         });
+        u.setRoles(rolesActualizados);
         repoUsuario.save(u);
     }
 

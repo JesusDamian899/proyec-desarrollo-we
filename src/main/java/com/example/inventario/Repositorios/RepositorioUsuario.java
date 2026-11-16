@@ -11,6 +11,7 @@ import com.example.inventario.Entidades.Usuario;
 
 public interface RepositorioUsuario extends JpaRepository<Usuario, Long> {
 
+    @EntityGraph(attributePaths = {"roles"})
     Optional<Usuario> findByUsername(String username);
 
     boolean existsByUsername(String username);
