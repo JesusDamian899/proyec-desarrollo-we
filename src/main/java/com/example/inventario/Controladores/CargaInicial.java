@@ -1,5 +1,7 @@
 package com.example.inventario.Controladores;
 
+import com.example.inventario.DTOs.IngresoStockRequestDTO;
+import com.example.inventario.Entidades.Articulo;
 import com.example.inventario.Entidades.Categoria;
 import com.example.inventario.Entidades.Permiso;
 import com.example.inventario.Entidades.Proveedor;
@@ -8,6 +10,7 @@ import com.example.inventario.Entidades.TipoPermiso;
 import com.example.inventario.Entidades.Ubicacion;
 import com.example.inventario.Entidades.UnidadMedida;
 import com.example.inventario.Entidades.Usuario;
+import com.example.inventario.Repositorios.ArticuloRepository;
 import com.example.inventario.Repositorios.CategoriaRepository;
 import com.example.inventario.Repositorios.ProveedorRepository;
 import com.example.inventario.Repositorios.RepositorioPermiso;
@@ -15,13 +18,17 @@ import com.example.inventario.Repositorios.RepositorioRol;
 import com.example.inventario.Repositorios.RepositorioUsuario;
 import com.example.inventario.Repositorios.UbicacionRepository;
 import com.example.inventario.Repositorios.UnidadMedidaRepository;
+import com.example.inventario.Servicios.AlmacenService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +42,9 @@ public class CargaInicial {
                                   CategoriaRepository repoCategoria,
                                   UnidadMedidaRepository repoUnidadMedida,
                                   UbicacionRepository repoUbicacion,
-                                  ProveedorRepository repoProveedor) {
+                                  ProveedorRepository repoProveedor,
+                                  ArticuloRepository repoArticulo,
+                                  AlmacenService almacenService) {
         return args -> {
 
             if (repoPermiso.count() == 0) {
@@ -94,16 +103,19 @@ public class CargaInicial {
                         seleccionar(p, "ARTICULO_VER", "INGRESO_VER", "KARDEX_VER",
                                 "REPORTE_VALORIZADO", "REPORTE_STOCK_MINIMO"));
 
-                // ---------- USUARIO ADMINISTRADOR ----------
+                // ---------- USUARIOS INICIALES ----------
                 BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-                Usuario admin = new Usuario();
-                admin.setUsername("admin");
-                admin.setPasswordHash(encoder.encode("Admin2026*"));
-                admin.setNombreCompleto("Administrador del sistema");
-                admin.setEmail("admin@electromecanicaandina.com");
-                admin.getRoles().add(repoRol.findByNombre("ADMINISTRADOR").orElseThrow());
-                repoUsuario.save(admin);
+                crearUsuario(repoUsuario, repoRol, encoder, "admin", "Admin2026*",
+                        "Administrador del Sistema", "admin@electromecanicaandina.com", "ADMINISTRADOR");
+                crearUsuario(repoUsuario, repoRol, encoder, "jefe.almacen", "Jefe2026*",
+                        "Carlos Mendoza (Jefe de Almacen)", "cmendoza@electromecanicaandina.com", "JEFE_ALMACEN");
+                crearUsuario(repoUsuario, repoRol, encoder, "almacenero", "Almacen2026*",
+                        "Luis Paredes (Operador Almacen)", "lparedes@electromecanicaandina.com", "ALMACENERO");
+                crearUsuario(repoUsuario, repoRol, encoder, "solicitante", "Solicita2026*",
+                        "Ana Torres (Supervisora Produccion)", "atorres@electromecanicaandina.com", "SOLICITANTE");
+                crearUsuario(repoUsuario, repoRol, encoder, "costos", "Costos2026*",
+                        "Jorge Ramirez (Analista de Costos)", "jramirez@electromecanicaandina.com", "COSTOS");
 
                 System.out.println(">>> CARGA INICIAL DE SEGURIDAD COMPLETADA");
             } else {
@@ -136,8 +148,73 @@ public class CargaInicial {
             if (repoProveedor.count() == 0) {
                 crearProveedor(repoProveedor, "Suministros Industriales Andinos SAC", "20512345678", "ventas@suministrosandinos.pe");
                 crearProveedor(repoProveedor, "Importadora Electromecanica Peru SAA", "20609876543", "contacto@imep.com.pe");
+                crearProveedor(repoProveedor, "Ferreyros Industrial Corp SAC", "20100028698", "atencion@ferreyrosind.pe");
+            }
+
+            if (repoArticulo.count() == 0) {
+                List<Categoria> cats = repoCategoria.findAll();
+                List<UnidadMedida> ums = repoUnidadMedida.findAll();
+                List<Ubicacion> ubs = repoUbicacion.findAll();
+                List<Proveedor> provs = repoProveedor.findAll();
+
+                if (!cats.isEmpty() && !ums.isEmpty() && !ubs.isEmpty() && !provs.isEmpty()) {
+                    Articulo a1 = crearArticuloBase(repoArticulo, "EL-00101", "Interruptor Termomagnetico Trifasico 63A",
+                            cats.get(0), ums.get(0), ubs.get(0), new BigDecimal("10.00"));
+                    Articulo a2 = crearArticuloBase(repoArticulo, "EL-00102", "Cable THW-90 12 AWG Indeco (Rollo 100m)",
+                            cats.get(0), ums.get(4 % ums.size()), ubs.get(0), new BigDecimal("8.00"));
+                    Articulo a3 = crearArticuloBase(repoArticulo, "MC-00201", "Rodamiento Rigido de Bolas SKF 6205-2RSH",
+                            cats.get(1 % cats.size()), ums.get(0), ubs.get(1 % ubs.size()), new BigDecimal("20.00"));
+                    Articulo a4 = crearArticuloBase(repoArticulo, "IN-00301", "Lubricante Dielectrico Industrial WD-40",
+                            cats.get(2 % cats.size()), ums.get(3 % ums.size()), ubs.get(1 % ubs.size()), new BigDecimal("15.00"));
+                    Articulo a5 = crearArticuloBase(repoArticulo, "EP-00401", "Guantes Dielectricos Clase 00 Certificados",
+                            cats.get(3 % cats.size()), ums.get(0), ubs.get(0), new BigDecimal("12.00"));
+
+                    almacenService.registrarIngreso(new IngresoStockRequestDTO(
+                            a1.getIdArticulo(), "LOT-2026-001", new BigDecimal("25.00"),
+                            LocalDate.now().plusMonths(18), ubs.get(0).getId(), provs.get(0).getIdProveedor(), "GR-001-00451"));
+                    almacenService.registrarIngreso(new IngresoStockRequestDTO(
+                            a2.getIdArticulo(), "LOT-2026-002", new BigDecimal("14.00"),
+                            LocalDate.now().plusMonths(24), ubs.get(0).getId(), provs.get(1 % provs.size()).getIdProveedor(), "GR-001-00452"));
+                    almacenService.registrarIngreso(new IngresoStockRequestDTO(
+                            a3.getIdArticulo(), "LOT-2026-003", new BigDecimal("12.00"),
+                            LocalDate.now().plusDays(20), ubs.get(1 % ubs.size()).getId(), provs.get(0).getIdProveedor(), "GR-001-00453"));
+                    almacenService.registrarIngreso(new IngresoStockRequestDTO(
+                            a4.getIdArticulo(), "LOT-2026-004", new BigDecimal("30.00"),
+                            LocalDate.now().plusDays(15), ubs.get(1 % ubs.size()).getId(), provs.get(2 % provs.size()).getIdProveedor(), "GR-001-00454"));
+                    almacenService.registrarIngreso(new IngresoStockRequestDTO(
+                            a5.getIdArticulo(), "LOT-2026-005", new BigDecimal("8.00"),
+                            LocalDate.now().plusMonths(6), ubs.get(0).getId(), provs.get(1 % provs.size()).getIdProveedor(), "GR-001-00455"));
+                }
             }
         };
+    }
+
+    private void crearUsuario(RepositorioUsuario repoUsuario, RepositorioRol repoRol,
+                              BCryptPasswordEncoder encoder, String username, String rawPassword,
+                              String nombreCompleto, String email, String rolNombre) {
+        if (repoUsuario.findByUsername(username).isEmpty()) {
+            Usuario u = new Usuario();
+            u.setUsername(username);
+            u.setPasswordHash(encoder.encode(rawPassword));
+            u.setNombreCompleto(nombreCompleto);
+            u.setEmail(email);
+            u.setActivo(true);
+            u.getRoles().add(repoRol.findByNombre(rolNombre).orElseThrow());
+            repoUsuario.save(u);
+        }
+    }
+
+    private Articulo crearArticuloBase(ArticuloRepository repo, String codigo, String descripcion,
+                                       Categoria cat, UnidadMedida um, Ubicacion ub, BigDecimal stockMinimo) {
+        Articulo a = new Articulo();
+        a.setCodigoInterno(codigo);
+        a.setDescripcion(descripcion);
+        a.setCategoria(cat);
+        a.setUnidadMedida(um);
+        a.setUbicacion(ub);
+        a.setStockMinimo(stockMinimo);
+        a.setStockActual(BigDecimal.ZERO);
+        return repo.save(a);
     }
 
     private void crearPermiso(RepositorioPermiso repo, String codigo, String nombre,
