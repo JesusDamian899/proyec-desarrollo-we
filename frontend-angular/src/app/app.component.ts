@@ -638,4 +638,81 @@ export class AppComponent implements OnInit {
     this.mensajeExito.set(null);
     this.mensajeError.set(null);
   }
+
+  exportarStockExcel(): void {
+    const filas = this.articulos();
+    const cabeceras = ['Codigo', 'Descripcion', 'Categoria', 'Ubicacion', 'Stock Actual', 'Stock Minimo', 'Estado'];
+    const lineas = filas.map((art) => {
+      const estado = art.stockActual <= art.stockMinimo ? 'REPOSICION URGENTE' : 'OPTIMO';
+      return [
+        art.codigoInterno,
+        `"${art.descripcion.replace(/"/g, '""')}"`,
+        art.categoria?.nombre || '-',
+        art.ubicacion?.codigo || 'SIN UBIC.',
+        art.stockActual,
+        art.stockMinimo,
+        estado
+      ].join(';');
+    });
+
+    const csv = '\ufeff' + [cabeceras.join(';'), ...lineas].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reporte_stock_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  exportarStockPDF(): void {
+    const filas = this.articulos().map((art) => {
+      const estado = art.stockActual <= art.stockMinimo ? 'REPOSICIÓN URGENTE' : 'ÓPTIMO';
+      return `
+        <tr>
+          <td>${art.codigoInterno}</td>
+          <td>${art.descripcion}</td>
+          <td>${art.categoria?.nombre || '-'}</td>
+          <td>${art.ubicacion?.codigo || 'SIN UBIC.'}</td>
+          <td>${art.stockActual} ${art.unidadMedida?.abreviatura || ''}</td>
+          <td>${art.stockMinimo}</td>
+          <td>${estado}</td>
+        </tr>`;
+    }).join('');
+
+    const ventana = window.open('', '_blank', 'width=900,height=650');
+    if (!ventana) return;
+
+    ventana.document.write(`
+      <html>
+        <head>
+          <title>Reporte de Stock Actual - ElectroMecánica Andina S.A.C.</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #1e293b; }
+            h1 { font-size: 18px; margin-bottom: 4px; }
+            p { font-size: 12px; color: #64748b; margin-top: 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 12px; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+            th { background: #f1f5f9; }
+          </style>
+        </head>
+        <body>
+          <h1>ElectroMecánica Andina S.A.C. — Reporte de Stock Actual</h1>
+          <p>Fecha de emisión: ${new Date().toLocaleString('es-PE')}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th><th>Descripción</th><th>Categoría</th>
+                <th>Ubicación</th><th>Stock Actual</th><th>Mínimo</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+  }
 }

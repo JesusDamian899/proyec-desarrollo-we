@@ -238,11 +238,19 @@
           <div class="two-col-layout">
             <div class="card">
               <div class="section-head">
-                <h2>Estado Actual de Artículos en Base de Datos</h2>
-                <button type="button" class="btn btn-sm btn-primary" (click)="cambiarVista('articulos')">
-                  Ir a Mantenimiento de Artículos
-                </button>
-              </div>
+  <h2>Estado Actual de Artículos en Base de Datos</h2>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <button type="button" class="btn btn-sm btn-secondary" (click)="exportarStockExcel()">
+      Exportar Excel
+    </button>
+    <button type="button" class="btn btn-sm btn-danger" (click)="exportarStockPDF()">
+      Exportar PDF
+    </button>
+    <button type="button" class="btn btn-sm btn-primary" (click)="cambiarVista('articulos')">
+      Ir a Mantenimiento de Artículos
+    </button>
+  </div>
+</div>
               <div class="table-wrap">
                 <table class="data-table">
                   <thead>
