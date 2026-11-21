@@ -49,12 +49,12 @@
           class="btn btn-primary btn-full"
           [disabled]="cargandoLogin"
         >
-          {{ cargandoLogin ? 'Validando credenciales JWT...' : 'Ingresar a la Intranet' }}
+          {{ cargandoLogin ? 'Verificando credenciales...' : 'Ingresar a la Intranet' }}
         </button>
       </form>
 
       <div class="demo-credentials">
-        <span class="demo-title">Cuentas iniciales en Base de Datos (Sprint 01 - RBAC):</span>
+        <span class="demo-title">Acceso rápido por perfil corporativo:</span>
         <div class="demo-buttons">
           <button type="button" id="demo-admin" class="btn btn-sm btn-secondary" (click)="seleccionarDemoUser('admin', 'Admin2026*')">
             Administrador (admin)
@@ -80,7 +80,7 @@
         <div class="brand-badge">EA</div>
         <div>
           <div class="sidebar-title">Electromecánica Andina</div>
-          <div class="sidebar-sub">Intranet ERP v1.0</div>
+          <div class="sidebar-sub">Intranet Corporativa</div>
         </div>
       </div>
 
@@ -106,7 +106,7 @@
           <span>Resumen e Indicadores</span>
         </button>
 
-        <div class="nav-group-label">Sprint 02 — Tablas Básicas</div>
+        <div class="nav-group-label">Catálogos Maestros</div>
         <button
           id="nav-articulos"
           type="button"
@@ -139,7 +139,7 @@
           <span class="nav-count">{{ proveedores().length }}</span>
         </button>
 
-        <div class="nav-group-label">Sprint 01 — Seguridad RBAC</div>
+        <div class="nav-group-label">Administración y Acceso</div>
         <button
           id="nav-seguridad"
           type="button"
@@ -151,7 +151,7 @@
           <span class="nav-count">{{ usuarios().length }}</span>
         </button>
 
-        <div class="nav-group-label">Sprints 03-05 — Movimientos</div>
+        <div class="nav-group-label">Operaciones</div>
         <button
           id="nav-almacen"
           type="button"
@@ -176,21 +176,21 @@
         <div>
           <h1 class="page-heading">
             @switch (vista()) {
-              @case ('resumen') { Panel General de Inventario y Base de Datos }
-              @case ('articulos') { Registro y Mantenimiento de Artículos (RF-05) }
-              @case ('tablas-basicas') { Mantenimiento de Tablas Básicas: Categorías, Unidades y Ubicaciones (RF-04) }
-              @case ('proveedores') { Registro y Mantenimiento de Proveedores (RF-06) }
-              @case ('seguridad') { Gestión de Usuarios, Roles y Permisos JWT (RF-01, RF-02, RF-03) }
-              @case ('almacen') { Operaciones de Almacén, Salidas FIFO y Trazabilidad Kardex }
+              @case ('resumen') { Panel General de Inventario }
+              @case ('articulos') { Catálogo y Mantenimiento de Artículos }
+              @case ('tablas-basicas') { Categorías, Unidades de Medida y Ubicaciones }
+              @case ('proveedores') { Directorio y Gestión de Proveedores }
+              @case ('seguridad') { Administración de Usuarios, Roles y Permisos }
+              @case ('almacen') { Operaciones de Almacén, Salidas FIFO y Kardex }
             }
           </h1>
           <p class="page-subheading">
-            Conectado en tiempo real a Spring Boot API REST (/api) y Base de Datos bd_almacen
+            Sistema de Gestión de Inventario y Almacén — Electromecánica Andina S.A.C.
           </p>
         </div>
         <div class="topbar-actions">
           <button id="btn-refresh-data" type="button" class="btn btn-secondary" (click)="cargarDatosIntranet()">
-            Sincronizar BD
+            Actualizar Datos
           </button>
         </div>
       </header>
@@ -226,19 +226,19 @@
             <div class="card kpi-card">
               <span class="kpi-label">Ubicaciones y Proveedores</span>
               <span class="kpi-value mono">{{ ubicaciones().length }} / {{ proveedores().length }}</span>
-              <span class="kpi-foot">Zonas activas / Proveedores RUC</span>
+              <span class="kpi-foot">Zonas activas / Proveedores</span>
             </div>
             <div class="card kpi-card">
-              <span class="kpi-label">Usuarios y Roles RBAC</span>
+              <span class="kpi-label">Usuarios y Roles</span>
               <span class="kpi-value mono">{{ usuarios().length }} / {{ roles().length || 5 }}</span>
-              <span class="kpi-foot">{{ auth.session()?.permisos?.length || 0 }} permisos asignados a tu sesión</span>
+              <span class="kpi-foot">{{ auth.session()?.permisos?.length || 0 }} permisos activos</span>
             </div>
           </section>
 
           <div class="two-col-layout">
             <div class="card">
               <div class="section-head">
-  <h2>Estado Actual de Artículos en Base de Datos</h2>
+  <h2>Estado Actual del Inventario</h2>
   <div style="display: flex; gap: 8px; flex-wrap: wrap;">
     <button type="button" class="btn btn-sm btn-secondary" (click)="exportarStockExcel()">
       Exportar Excel
@@ -289,38 +289,38 @@
 
             <div class="card">
               <div class="section-head">
-                <h2>Resumen de Tablas Básicas en BD</h2>
+                <h2>Resumen de Catálogos del Sistema</h2>
                 <button type="button" class="btn btn-sm btn-secondary" (click)="cambiarVista('tablas-basicas')">
-                  Gestionar Tablas
+                  Gestionar Catálogos
                 </button>
               </div>
               <ul class="summary-list">
                 <li>
-                  <span>Tabla <code>dbo.categorias</code></span>
+                  <span>Categorías de Artículos</span>
                   <span class="badge badge-info">{{ categorias().length }} registros</span>
                 </li>
                 <li>
-                  <span>Tabla <code>dbo.unidades_medida</code></span>
+                  <span>Unidades de Medida</span>
                   <span class="badge badge-info">{{ unidades().length }} registros</span>
                 </li>
                 <li>
-                  <span>Tabla <code>dbo.ubicaciones</code></span>
+                  <span>Ubicaciones de Almacén</span>
                   <span class="badge badge-info">{{ ubicaciones().length }} registros</span>
                 </li>
                 <li>
-                  <span>Tabla <code>dbo.proveedores</code></span>
+                  <span>Proveedores Registrados</span>
                   <span class="badge badge-info">{{ proveedores().length }} registros</span>
                 </li>
                 <li>
-                  <span>Tabla <code>dbo.articulos</code></span>
+                  <span>Artículos en Catálogo</span>
                   <span class="badge badge-info">{{ articulos().length }} registros</span>
                 </li>
                 <li>
-                  <span>Tabla <code>dbo.lotes</code></span>
+                  <span>Lotes Activos</span>
                   <span class="badge badge-info">{{ lotes().length }} lotes activos</span>
                 </li>
                 <li>
-                  <span>Tabla <code>dbo.kardex</code></span>
+                  <span>Movimientos en Kardex</span>
                   <span class="badge badge-info">{{ kardex().length }} movimientos</span>
                 </li>
               </ul>
@@ -328,11 +328,11 @@
           </div>
         }
 
-        <!-- ==================== VISTA 2: ARTICULOS (SPRINT 02) ==================== -->
+        <!-- ==================== VISTA 2: ARTICULOS ==================== -->
         @if (vista() === 'articulos') {
           <div class="card form-card">
             <div class="section-head">
-              <h2>{{ editandoArticuloId ? 'Editar Artículo #' + editandoArticuloId : 'Registrar Nuevo Artículo en Base de Datos' }}</h2>
+              <h2>{{ editandoArticuloId ? 'Editar Artículo #' + editandoArticuloId : 'Registrar Nuevo Artículo' }}</h2>
               @if (editandoArticuloId) {
                 <button type="button" class="btn btn-sm btn-secondary" (click)="cancelarEdicionArticulo()">
                   Cancelar Edición
@@ -715,7 +715,7 @@
           </div>
         }
 
-        <!-- ==================== VISTA 4: PROVEEDORES (SPRINT 02) ==================== -->
+        <!-- ==================== VISTA 4: PROVEEDORES ==================== -->
         @if (vista() === 'proveedores') {
           <div class="card form-card">
             <div class="section-head">
@@ -805,11 +805,11 @@
           </div>
         }
 
-        <!-- ==================== VISTA 5: SEGURIDAD (SPRINT 01) ==================== -->
+        <!-- ==================== VISTA 5: SEGURIDAD ==================== -->
         @if (vista() === 'seguridad') {
           <div class="card form-card">
             <div class="section-head">
-              <h2>Registrar Nuevo Usuario Corporativo (RF-02)</h2>
+              <h2>Registrar Nuevo Usuario Corporativo</h2>
             </div>
             <form (ngSubmit)="guardarUsuario()" class="form-grid">
               <div class="form-field">
@@ -825,7 +825,7 @@
                 />
               </div>
               <div class="form-field">
-                <label for="usr-pass">Contraseña (BCrypt)</label>
+                <label for="usr-pass">Contraseña</label>
                 <input
                   id="usr-pass"
                   name="password"
@@ -861,7 +861,7 @@
                 />
               </div>
               <div class="form-field">
-                <label for="usr-rol">Rol Asignado (RBAC)</label>
+                <label for="usr-rol">Rol Asignado</label>
                 <select id="usr-rol" name="rolId" class="form-control" [(ngModel)]="formUsuario.rolId">
                   @for (r of roles(); track r.id) {
                     <option [ngValue]="r.id">{{ r.nombre }}</option>
@@ -931,7 +931,7 @@
 
             <div class="card">
               <div class="section-head">
-                <h2>Roles y Permisos RBAC ({{ roles().length }})</h2>
+                <h2>Roles y Permisos del Sistema ({{ roles().length }})</h2>
               </div>
               <div class="roles-stack">
                 @for (r of roles(); track r.id) {

@@ -147,7 +147,7 @@ CREATE TABLE dbo.articulo (
 );
 
 /* ============================================================================
-   3. TABLAS TRANSACCIONALES DE ALMACEN Y KARDEX (SPRINTS 03, 04 Y 05)
+   3. TABLAS TRANSACCIONALES DE ALMACEN Y KARDEX
    ============================================================================ */
 
 CREATE TABLE dbo.lote (

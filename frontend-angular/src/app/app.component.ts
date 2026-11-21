@@ -104,7 +104,7 @@ export class AppComponent implements OnInit {
   editandoProveedorId: number | null = null;
   formProveedor = { ruc: '', razonSocial: '', contacto: '' };
 
-  // Formulario Usuario (Sprint 01)
+  // Formulario Usuario
   formUsuario = {
     username: '',
     password: '',
@@ -264,7 +264,7 @@ export class AppComponent implements OnInit {
     this.api.listarMovimientos().subscribe({ next: (d) => this.movimientos.set(d) });
   }
 
-  // ==================== CRUD ARTICULOS (SPRINT 02) ====================
+  // ==================== CRUD ARTICULOS ====================
   guardarArticulo(): void {
     this.limpiarMensajes();
     const payload: Partial<Articulo> = {
@@ -282,7 +282,7 @@ export class AppComponent implements OnInit {
     if (this.editandoArticuloId) {
       this.api.actualizarArticulo(this.editandoArticuloId, payload).subscribe({
         next: () => {
-          this.notificarExito('Artículo actualizado correctamente en la Base de Datos.');
+          this.notificarExito('Artículo actualizado correctamente.');
           this.cancelarEdicionArticulo();
           this.cargarDatosIntranet();
         },
@@ -291,7 +291,7 @@ export class AppComponent implements OnInit {
     } else {
       this.api.crearArticulo(payload).subscribe({
         next: () => {
-          this.notificarExito('Nuevo artículo registrado exitosamente en la Base de Datos.');
+          this.notificarExito('Nuevo artículo registrado exitosamente.');
           this.cancelarEdicionArticulo();
           this.cargarDatosIntranet();
         },
@@ -330,7 +330,7 @@ export class AppComponent implements OnInit {
     this.limpiarMensajes();
     this.api.eliminarArticulo(id).subscribe({
       next: () => {
-        this.notificarExito('Artículo eliminado de la Base de Datos.');
+        this.notificarExito('Artículo eliminado correctamente.');
         this.cargarDatosIntranet();
       },
       error: () =>
@@ -340,7 +340,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // ==================== CRUD CATEGORIAS (SPRINT 02) ====================
+  // ==================== CRUD CATEGORIAS ====================
   guardarCategoria(): void {
     this.limpiarMensajes();
     const nombre = this.formCategoriaNombre.trim();
@@ -353,7 +353,7 @@ export class AppComponent implements OnInit {
     obs.subscribe({
       next: () => {
         this.notificarExito(
-          this.editandoCategoriaId ? 'Categoría actualizada.' : 'Categoría registrada en BD.'
+          this.editandoCategoriaId ? 'Categoría actualizada.' : 'Categoría registrada exitosamente.'
         );
         this.editandoCategoriaId = null;
         this.formCategoriaNombre = '';
@@ -379,7 +379,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // ==================== CRUD UNIDADES DE MEDIDA (SPRINT 02) ====================
+  // ==================== CRUD UNIDADES DE MEDIDA ====================
   guardarUnidad(): void {
     this.limpiarMensajes();
     const payload = {
@@ -421,7 +421,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // ==================== CRUD UBICACIONES (SPRINT 02) ====================
+  // ==================== CRUD UBICACIONES ====================
   guardarUbicacion(): void {
     this.limpiarMensajes();
     const payload = {
@@ -439,7 +439,7 @@ export class AppComponent implements OnInit {
     obs.subscribe({
       next: () => {
         this.notificarExito(
-          this.editandoUbicacionId ? 'Ubicación actualizada.' : 'Ubicación registrada en BD.'
+          this.editandoUbicacionId ? 'Ubicación actualizada.' : 'Ubicación registrada exitosamente.'
         );
         this.editandoUbicacionId = null;
         this.formUbicacion = { codigo: '', nombre: '', tipo: 'ESTANTERIA' };
@@ -465,7 +465,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // ==================== CRUD PROVEEDORES (SPRINT 02) ====================
+  // ==================== CRUD PROVEEDORES ====================
   guardarProveedor(): void {
     this.limpiarMensajes();
     const payload = {
@@ -481,7 +481,7 @@ export class AppComponent implements OnInit {
     obs.subscribe({
       next: () => {
         this.notificarExito(
-          this.editandoProveedorId ? 'Proveedor actualizado.' : 'Proveedor registrado en BD.'
+          this.editandoProveedorId ? 'Proveedor actualizado.' : 'Proveedor registrado exitosamente.'
         );
         this.editandoProveedorId = null;
         this.formProveedor = { ruc: '', razonSocial: '', contacto: '' };
@@ -511,7 +511,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // ==================== SEGURIDAD: USUARIOS Y ROLES (SPRINT 01) ====================
+  // ==================== SEGURIDAD: USUARIOS Y ROLES ====================
   guardarUsuario(): void {
     this.limpiarMensajes();
     const payload = {
@@ -551,7 +551,7 @@ export class AppComponent implements OnInit {
     });
   }
 
-  // ==================== OPERACIONES DE ALMACEN (SPRINTS 03, 04, 05) ====================
+  // ==================== OPERACIONES DE ALMACEN ====================
   ejecutarIngreso(): void {
     this.limpiarMensajes();
     this.api

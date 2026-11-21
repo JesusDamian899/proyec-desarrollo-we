@@ -228,7 +228,7 @@ export class ApiService {
     localStorage.setItem(this.DB_KEY, JSON.stringify(db));
   }
 
-  // ==================== ARTICULOS (RF-05) ====================
+  // ==================== ARTICULOS ====================
   listarArticulos(): Observable<Articulo[]> {
     return this.http.get<Articulo[]>(`${this.base}/articulos`).pipe(
       map((list) => list.map((a) => this.normalizeArticulo(a))),
@@ -345,7 +345,7 @@ export class ApiService {
     );
   }
 
-  // ==================== CATEGORIAS (RF-04) ====================
+  // ==================== CATEGORIAS ====================
   listarCategorias(): Observable<Categoria[]> {
     return this.http
       .get<Categoria[]>(`${this.base}/categorias`)
@@ -401,7 +401,7 @@ export class ApiService {
     );
   }
 
-  // ==================== UNIDADES DE MEDIDA (RF-04) ====================
+  // ==================== UNIDADES DE MEDIDA ====================
   listarUnidades(): Observable<UnidadMedida[]> {
     return this.http.get<UnidadMedida[]>(`${this.base}/unidades-medida`).pipe(
       map((list) => list.map((u) => this.normalizeUnidad(u))),
@@ -462,7 +462,7 @@ export class ApiService {
     );
   }
 
-  // ==================== UBICACIONES (RF-04) ====================
+  // ==================== UBICACIONES ====================
   listarUbicaciones(): Observable<Ubicacion[]> {
     return this.http
       .get<Ubicacion[]>(`${this.base}/ubicaciones`)
@@ -525,7 +525,7 @@ export class ApiService {
     );
   }
 
-  // ==================== PROVEEDORES (RF-06) ====================
+  // ==================== PROVEEDORES ====================
   listarProveedores(): Observable<Proveedor[]> {
     return this.http
       .get<Proveedor[]>(`${this.base}/proveedores`)
@@ -672,7 +672,7 @@ export class ApiService {
       .pipe(catchError((err) => (this.isServerOffline(err) ? of([]) : throwError(() => err))));
   }
 
-  // ==================== ALMACEN Y KARDEX (SPRINTS 03, 04, 05) ====================
+  // ==================== ALMACEN Y KARDEX ====================
   listarLotesActivos(): Observable<Lote[]> {
     return this.http.get<any[]>(`${this.base}/almacen/lotes`).pipe(
       map((list) => list.map((l) => this.normalizeLote(l))),
