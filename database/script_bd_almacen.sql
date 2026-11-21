@@ -55,7 +55,7 @@ IF OBJECT_ID('dbo.permiso', 'U') IS NOT NULL DROP TABLE dbo.permiso;
 GO
 
 /* ============================================================================
-   1. TABLAS DE SEGURIDAD Y CONTROL DE ACCESO (SPRINT 01: RF-01, RF-02, RF-03)
+   1. TABLAS DE SEGURIDAD Y CONTROL DE ACCESO
    ============================================================================ */
 
 CREATE TABLE dbo.permiso (
@@ -104,7 +104,7 @@ CREATE TABLE dbo.usuario_rol (
 );
 
 /* ============================================================================
-   2. TABLAS BASICAS / CATALOGOS MAESTROS (SPRINT 02: RF-04, RF-05, RF-06)
+   2. TABLAS BASICAS / CATALOGOS MAESTROS
    ============================================================================ */
 
 CREATE TABLE dbo.categoria (
