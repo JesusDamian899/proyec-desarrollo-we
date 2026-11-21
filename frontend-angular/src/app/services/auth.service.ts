@@ -62,25 +62,31 @@ export class AuthService {
   login(username: string, password: string): Observable<LoginResponse> {
     const cleanUser = username.trim();
     return this.http.post<LoginResponse>(`${this.getApiBase()}/auth/login`, { username: cleanUser, password }).pipe(
-      catchError(() => {
-        // Intentar ruta relativa /api/auth/login si el proxy esta activo
+      catchError((err) => {
+        // Si el backend respondió 401/403 (credenciales invalidas o usuario inactivo), propagar el error real
+        if (err && err.status && err.status !== 0 && err.status !== 404 && err.status !== 504) {
+          return throwError(() => err);
+        }
         return this.http.post<LoginResponse>('/api/auth/login', { username: cleanUser, password });
       }),
       catchError((err) => {
-        // Si el backend Spring Boot aun no esta levantado o en modo local, validar contra cuentas semilla
+        if (err && err.status && err.status !== 0 && err.status !== 404 && err.status !== 504) {
+          return throwError(() => err);
+        }
+        // Fallback local unicamente cuando el servidor backend no esta encendido (status 0)
         const cuenta = CUENTAS_FALLBACK[cleanUser.toLowerCase()];
         if (cuenta && cuenta.pass.includes(password)) {
           const mockRes: LoginResponse = {
             token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.intranet-local-token',
             tipo: 'Bearer',
-            username: cleanUser,
+            username: cleanUser.toLowerCase(),
             nombreCompleto: cuenta.nombre,
             roles: cuenta.roles,
             permisos: PERMISOS_BASE
           };
           return of(mockRes);
         }
-        return throwError(() => err);
+        return throwError(() => ({ error: { mensaje: 'Usuario o contraseña incorrectos' } }));
       }),
       tap((res) => {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(res));
@@ -106,6 +112,8 @@ export class AuthService {
     const s = this.session();
     if (!s) return false;
     if (s.roles?.includes('ADMINISTRADOR') || s.roles?.includes('JEFE_ALMACEN')) return true;
-    return s.permisos?.some((p) => p.codigo === codigo) ?? true;
+    return (
+      s.permisos?.some((p) => (typeof p === 'string' ? p === codigo : p.codigo === codigo)) ?? true
+    );
   }
 }

@@ -1,5 +1,6 @@
 export interface Permiso {
   id?: number;
+  idPermiso?: number;
   codigo: string;
   nombre: string;
   modulo: string;
@@ -11,29 +12,33 @@ export interface Permiso {
 
 export interface Rol {
   id?: number;
+  idRol?: number;
   nombre: string;
   descripcion: string;
   activo?: boolean;
-  permisos?: Permiso[];
+  permisos?: Array<Permiso | string>;
 }
 
 export interface Usuario {
   id?: number;
+  idUsuario?: number;
   username: string;
   nombreCompleto: string;
   email: string;
   activo: boolean;
   fechaCreacion?: string;
-  roles?: Rol[];
+  roles?: Array<Rol | string>;
 }
 
 export interface LoginResponse {
   token: string;
   tipo: string;
+  idUsuario?: number;
   username: string;
   nombreCompleto: string;
   roles: string[];
-  permisos: Permiso[];
+  permisos: Array<Permiso | string>;
+  expiraEnMs?: number;
 }
 
 export interface Categoria {
@@ -43,6 +48,7 @@ export interface Categoria {
 
 export interface UnidadMedida {
   idUnidad?: number;
+  idUnidadMedida?: number;
   nombre: string;
   abreviatura: string;
 }
@@ -77,10 +83,18 @@ export interface Lote {
   id: number;
   codigoLote: string;
   articulo?: Articulo | null;
+  articuloId?: number;
+  articuloCodigo?: string;
+  articuloDescripcion?: string;
   ubicacion?: Ubicacion | null;
+  ubicacionId?: number;
+  ubicacionNombre?: string;
+  ubicacionCodigo?: string;
   cantidadDisponible: number;
+  cantidad?: number;
   fechaIngreso: string;
   fechaVencimiento?: string | null;
+  estado?: string;
   activo: boolean;
 }
 

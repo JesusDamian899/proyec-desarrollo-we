@@ -286,7 +286,7 @@ export class AppComponent implements OnInit {
           this.cancelarEdicionArticulo();
           this.cargarDatosIntranet();
         },
-        error: (err) => this.notificarError(err?.error?.mensaje || 'Error al actualizar el artículo')
+        error: (err) => this.notificarError(this.extraerError(err, 'Error al actualizar el artículo'))
       });
     } else {
       this.api.crearArticulo(payload).subscribe({
@@ -295,7 +295,7 @@ export class AppComponent implements OnInit {
           this.cancelarEdicionArticulo();
           this.cargarDatosIntranet();
         },
-        error: (err) => this.notificarError(err?.error?.mensaje || 'Error al registrar el artículo')
+        error: (err) => this.notificarError(this.extraerError(err, 'Error al registrar el artículo'))
       });
     }
   }
@@ -306,7 +306,7 @@ export class AppComponent implements OnInit {
       codigoInterno: art.codigoInterno,
       descripcion: art.descripcion,
       categoriaId: art.categoria?.idCategoria ?? 0,
-      unidadId: art.unidadMedida?.idUnidad ?? 0,
+      unidadId: art.unidadMedida?.idUnidad ?? art.unidadMedida?.idUnidadMedida ?? 0,
       ubicacionId: art.ubicacion?.id ?? 0,
       stockMinimo: art.stockMinimo,
       stockActual: art.stockActual
@@ -319,7 +319,7 @@ export class AppComponent implements OnInit {
       codigoInterno: '',
       descripcion: '',
       categoriaId: this.categorias()[0]?.idCategoria ?? 0,
-      unidadId: this.unidades()[0]?.idUnidad ?? 0,
+      unidadId: this.unidades()[0]?.idUnidad ?? this.unidades()[0]?.idUnidadMedida ?? 0,
       ubicacionId: this.ubicaciones()[0]?.id ?? 0,
       stockMinimo: 10,
       stockActual: 0
@@ -359,7 +359,7 @@ export class AppComponent implements OnInit {
         this.formCategoriaNombre = '';
         this.cargarDatosIntranet();
       },
-      error: (err) => this.notificarError(err?.error?.mensaje || 'Error al guardar categoría')
+      error: (err) => this.notificarError(this.extraerError(err, 'Error al guardar categoría'))
     });
   }
 
@@ -401,12 +401,12 @@ export class AppComponent implements OnInit {
         this.formUnidad = { nombre: '', abreviatura: '' };
         this.cargarDatosIntranet();
       },
-      error: (err) => this.notificarError(err?.error?.mensaje || 'Error al guardar unidad')
+      error: (err) => this.notificarError(this.extraerError(err, 'Error al guardar unidad'))
     });
   }
 
   editarUnidad(u: UnidadMedida): void {
-    this.editandoUnidadId = u.idUnidad!;
+    this.editandoUnidadId = (u.idUnidad ?? u.idUnidadMedida)!;
     this.formUnidad = { nombre: u.nombre, abreviatura: u.abreviatura };
   }
 
@@ -445,7 +445,7 @@ export class AppComponent implements OnInit {
         this.formUbicacion = { codigo: '', nombre: '', tipo: 'ESTANTERIA' };
         this.cargarDatosIntranet();
       },
-      error: (err) => this.notificarError(err?.error?.mensaje || 'Error al guardar ubicación')
+      error: (err) => this.notificarError(this.extraerError(err, 'Error al guardar ubicación'))
     });
   }
 
@@ -487,7 +487,7 @@ export class AppComponent implements OnInit {
         this.formProveedor = { ruc: '', razonSocial: '', contacto: '' };
         this.cargarDatosIntranet();
       },
-      error: (err) => this.notificarError(err?.error?.mensaje || 'Error al guardar proveedor')
+      error: (err) => this.notificarError(this.extraerError(err, 'Error al guardar proveedor'))
     });
   }
 
@@ -534,20 +534,20 @@ export class AppComponent implements OnInit {
         };
         this.cargarDatosIntranet();
       },
-      error: (err) => this.notificarError(err?.error?.mensaje || 'Error al registrar usuario')
+      error: (err) => this.notificarError(this.extraerError(err, 'Error al registrar usuario'))
     });
   }
 
   alternarEstadoUsuario(u: Usuario): void {
     this.limpiarMensajes();
-    this.api.cambiarEstadoUsuario(u.id!, !u.activo).subscribe({
+    this.api.cambiarEstadoUsuario((u.id ?? u.idUsuario)!, !u.activo).subscribe({
       next: (actualizado) => {
         this.notificarExito(
           `Estado de ${actualizado.username} actualizado a ${actualizado.activo ? 'ACTIVO' : 'INACTIVO'}.`
         );
         this.cargarDatosIntranet();
       },
-      error: (err) => this.notificarError(err?.error?.mensaje || 'No se pudo cambiar el estado')
+      error: (err) => this.notificarError(this.extraerError(err, 'No se pudo cambiar el estado'))
     });
   }
 
@@ -572,7 +572,7 @@ export class AppComponent implements OnInit {
           this.formIngreso.codigoLote = '';
           this.cargarDatosIntranet();
         },
-        error: (err) => this.notificarError(err?.error?.mensaje || 'Error al registrar ingreso')
+        error: (err) => this.notificarError(this.extraerError(err, 'Error al registrar ingreso'))
       });
   }
 
@@ -591,7 +591,7 @@ export class AppComponent implements OnInit {
           );
           this.cargarDatosIntranet();
         },
-        error: (err) => this.notificarError(err?.error?.mensaje || 'Error al procesar salida FIFO')
+        error: (err) => this.notificarError(this.extraerError(err, 'Error al procesar salida FIFO'))
       });
   }
 
@@ -620,8 +620,16 @@ export class AppComponent implements OnInit {
           this.cargarDatosIntranet();
         },
         error: (err) =>
-          this.notificarError(err?.error?.mensaje || 'Error al registrar transferencia')
+          this.notificarError(this.extraerError(err, 'Error al registrar transferencia'))
       });
+  }
+
+  private extraerError(err: any, fallback: string): string {
+    if (!err) return fallback;
+    if (typeof err.error === 'string' && err.error.trim().length > 0) return err.error;
+    if (err.error?.mensaje) return err.error.mensaje;
+    if (err.message) return err.message;
+    return fallback;
   }
 
   private notificarExito(msg: string): void {

@@ -902,8 +902,8 @@
                         <td>{{ u.nombreCompleto }}</td>
                         <td>{{ u.email }}</td>
                         <td>
-                          @for (r of u.roles ?? []; track r.id) {
-                            <span class="badge badge-info">{{ r.nombre }}</span>
+                          @for (r of u.roles ?? []; track $index) {
+                            <span class="badge badge-info">{{ $any(r).nombre || r }}</span>
                           }
                         </td>
                         <td>
