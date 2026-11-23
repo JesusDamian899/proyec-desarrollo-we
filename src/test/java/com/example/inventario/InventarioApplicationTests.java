@@ -258,5 +258,22 @@ class InventarioApplicationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre\":\"Sin Permiso\"}"))
                 .andExpect(status().isForbidden());
+
+        // Verificar respuesta JSON 409 Conflict al intentar duplicar correo desde API REST
+        LoginResponse admin = servicioAuth.login(new LoginRequest("admin", "Admin2026*"));
+        String bearerAdmin = "Bearer " + admin.token();
+        Long rolId = servicioRol.listar().get(0).idRol();
+        mockMvc.perform(post("/api/usuarios")
+                        .header("Authorization", bearerAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"otro.usuario\",\"password\":\"ClaveSegura2026\",\"nombreCompleto\":\"Prueba\",\"email\":\"admin@electromecanicaandina.com\",\"rolesIds\":[" + rolId + "]}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.estado").value(409));
+
+        // Verificar SPA forwarding de rutas de Angular en Spring Boot
+        mockMvc.perform(get("/articulos"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/seguridad"))
+                .andExpect(status().isOk());
     }
 }

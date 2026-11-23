@@ -593,7 +593,7 @@ export class ApiService {
     );
   }
 
-  // ==================== SEGURIDAD: USUARIOS, ROLES Y PERMISOS (RF-01, RF-02, RF-03) ====================
+  // ==================== SEGURIDAD: USUARIOS, ROLES Y PERMISOS ====================
   listarUsuarios(): Observable<Usuario[]> {
     return this.http.get<Usuario[]>(`${this.base}/usuarios`).pipe(
       map((list) => list.map((u) => this.normalizeUsuario(u))),

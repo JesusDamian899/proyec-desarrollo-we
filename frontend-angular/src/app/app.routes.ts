@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, permisoGuard } from './guards/auth.guard';
+import { anyPermisoGuard, authGuard, guestGuard, permisoGuard } from './guards/auth.guard';
 import { ShellComponent } from './layout/shell.component';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -53,6 +53,16 @@ export const routes: Routes = [
       {
         path: 'almacen',
         component: AlmacenComponent,
+        canActivate: [
+          anyPermisoGuard(
+            'INGRESO_VER',
+            'INGRESO_CREAR',
+            'SALIDA_VER',
+            'SALIDA_ATENDER',
+            'TRANSFER_VER',
+            'KARDEX_VER'
+          )
+        ],
         data: { titulo: 'Operaciones de Almacén, Salidas FIFO y Kardex' }
       }
     ]
