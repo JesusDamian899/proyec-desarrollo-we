@@ -3,13 +3,11 @@ package com.example.inventario.Servicios;
 import com.example.inventario.Entidades.Articulo;
 import com.example.inventario.Entidades.Kardex;
 import com.example.inventario.Entidades.Usuario;
-import com.example.inventario.Entidades.UsuarioAutenticado;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
 import com.example.inventario.Repositorios.ArticuloRepository;
 import com.example.inventario.Repositorios.KardexRepository;
 import com.example.inventario.Repositorios.RepositorioUsuario;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.inventario.Seguridad.UsuarioActualHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,22 +19,26 @@ import java.util.Optional;
 @Service
 public class KardexService {
 
-    @Autowired
-    private KardexRepository kardexRepository;
+    private final KardexRepository kardexRepository;
+    private final ArticuloRepository articuloRepository;
+    private final RepositorioUsuario repositorioUsuario;
+    private final UsuarioActualHelper usuarioActualHelper;
 
-    @Autowired
-    private ArticuloRepository articuloRepository;
+    public KardexService(KardexRepository kardexRepository,
+                         ArticuloRepository articuloRepository,
+                         RepositorioUsuario repositorioUsuario,
+                         UsuarioActualHelper usuarioActualHelper) {
+        this.kardexRepository = kardexRepository;
+        this.articuloRepository = articuloRepository;
+        this.repositorioUsuario = repositorioUsuario;
+        this.usuarioActualHelper = usuarioActualHelper;
+    }
 
-    @Autowired
-    private RepositorioUsuario repositorioUsuario;
-
-    // Listar todo el historial del Kardex
     @Transactional(readOnly = true)
     public List<Kardex> listarTodo() {
         return kardexRepository.findAllByOrderByFechaMovimientoDesc();
     }
 
-    // Obtener un registro específico por ID
     @Transactional(readOnly = true)
     public Optional<Kardex> obtenerPorId(Integer id) {
         return kardexRepository.findById(id);
@@ -52,13 +54,11 @@ public class KardexService {
         return kardexRepository.findByTipoMovimientoIgnoreCaseOrderByFechaMovimientoDesc(tipo);
     }
 
-    // Filtrar historial
     @Transactional(readOnly = true)
     public List<Kardex> listarPorFechas(LocalDateTime inicio, LocalDateTime fin) {
         return kardexRepository.findByFechaMovimientoBetweenOrderByFechaMovimientoDesc(inicio, fin);
     }
 
-    // Registrar un nuevo movimiento en el Kardex
     @Transactional
     public Kardex registrarMovimiento(Kardex kardex) {
         if (kardex.getFechaMovimiento() == null) {
@@ -67,7 +67,7 @@ public class KardexService {
         if (kardex.getArticulo() != null && kardex.getArticulo().getIdArticulo() != null) {
             Articulo articulo = articuloRepository.findById(kardex.getArticulo().getIdArticulo())
                     .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "Artículo no encontrado con ID: " + kardex.getArticulo().getIdArticulo()));
+                            "Articulo no encontrado con ID: " + kardex.getArticulo().getIdArticulo()));
             kardex.setArticulo(articulo);
             if (kardex.getSaldoResultante() == null) {
                 kardex.setSaldoResultante(articulo.getStockActual() != null ? articulo.getStockActual() : BigDecimal.ZERO);
@@ -85,26 +85,8 @@ public class KardexService {
                             "Usuario no encontrado con ID: " + kardex.getUsuario().getIdUsuario()));
             kardex.setUsuario(u);
         } else {
-            kardex.setUsuario(obtenerUsuarioActual());
+            kardex.setUsuario(usuarioActualHelper.obtenerUsuarioActual());
         }
         return kardexRepository.save(kardex);
-    }
-
-    private Usuario obtenerUsuarioActual() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            if (auth.getPrincipal() instanceof UsuarioAutenticado ua) {
-                return repositorioUsuario.findById(ua.getIdUsuario()).orElse(null);
-            }
-            if (auth.getName() != null) {
-                var porUsername = repositorioUsuario.findByUsername(auth.getName());
-                if (porUsername.isPresent()) {
-                    return porUsername.get();
-                }
-            }
-        }
-        return repositorioUsuario.findByUsername("admin")
-                .or(() -> repositorioUsuario.findAll().stream().findFirst())
-                .orElse(null);
     }
 }

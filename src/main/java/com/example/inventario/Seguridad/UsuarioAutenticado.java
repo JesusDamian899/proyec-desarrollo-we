@@ -1,6 +1,6 @@
-package com.example.inventario.Entidades;
+package com.example.inventario.Seguridad;
 
-
+import com.example.inventario.Entidades.Usuario;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 

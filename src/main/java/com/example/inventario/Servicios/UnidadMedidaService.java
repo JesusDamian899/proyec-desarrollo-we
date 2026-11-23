@@ -1,45 +1,72 @@
 package com.example.inventario.Servicios;
 
+import com.example.inventario.Entidades.UnidadMedida;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
+import com.example.inventario.Excepciones.ReglaNegocioException;
+import com.example.inventario.Repositorios.UnidadMedidaRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.example.inventario.Entidades.UnidadMedida;
-import com.example.inventario.Repositorios.UnidadMedidaRepository;
 
 @Service
 public class UnidadMedidaService {
 
-    @Autowired
-    private UnidadMedidaRepository unidadMedidaRepository;
+    private final UnidadMedidaRepository unidadMedidaRepository;
 
-    // 1. Obtener todas las unidades de medida registradas
+    public UnidadMedidaService(UnidadMedidaRepository unidadMedidaRepository) {
+        this.unidadMedidaRepository = unidadMedidaRepository;
+    }
+
+    @Transactional(readOnly = true)
     public List<UnidadMedida> listarTodas() {
         return unidadMedidaRepository.findAll();
     }
 
-    // 2. Buscar una unidad específica por su identificador único
+    @Transactional(readOnly = true)
     public Optional<UnidadMedida> obtenerPorId(Integer id) {
         return unidadMedidaRepository.findById(id);
     }
 
-    // 3. Registrar una nueva unidad de medida
+    @Transactional
     public UnidadMedida guardar(UnidadMedida unidadMedida) {
+        if (unidadMedida.getNombre() == null || unidadMedida.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre de la unidad de medida es obligatorio.");
+        }
+        if (unidadMedida.getAbreviatura() == null || unidadMedida.getAbreviatura().isBlank()) {
+            throw new IllegalArgumentException("La abreviatura de la unidad de medida es obligatoria.");
+        }
+        String abrev = unidadMedida.getAbreviatura().trim().toUpperCase();
+        if (unidadMedidaRepository.existsByAbreviaturaIgnoreCase(abrev)) {
+            throw new ReglaNegocioException("La abreviatura '" + abrev + "' ya esta registrada.");
+        }
+        unidadMedida.setNombre(unidadMedida.getNombre().trim());
+        unidadMedida.setAbreviatura(abrev);
         return unidadMedidaRepository.save(unidadMedida);
     }
 
-    // 4. Modificar nombre y abreviatura de una unidad existente
+    @Transactional
     public UnidadMedida actualizar(Integer id, UnidadMedida datosActualizados) {
+        if (datosActualizados.getNombre() == null || datosActualizados.getNombre().isBlank()) {
+            throw new IllegalArgumentException("El nombre de la unidad de medida es obligatorio.");
+        }
+        if (datosActualizados.getAbreviatura() == null || datosActualizados.getAbreviatura().isBlank()) {
+            throw new IllegalArgumentException("La abreviatura de la unidad de medida es obligatoria.");
+        }
+        String nuevaAbrev = datosActualizados.getAbreviatura().trim().toUpperCase();
         return unidadMedidaRepository.findById(id).map(unidadExistente -> {
-            unidadExistente.setNombre(datosActualizados.getNombre());
-            unidadExistente.setAbreviatura(datosActualizados.getAbreviatura());
+            if (!unidadExistente.getAbreviatura().equalsIgnoreCase(nuevaAbrev)
+                    && unidadMedidaRepository.existsByAbreviaturaIgnoreCase(nuevaAbrev)) {
+                throw new ReglaNegocioException("La abreviatura '" + nuevaAbrev + "' ya esta registrada.");
+            }
+            unidadExistente.setNombre(datosActualizados.getNombre().trim());
+            unidadExistente.setAbreviatura(nuevaAbrev);
             return unidadMedidaRepository.save(unidadExistente);
         }).orElseThrow(() -> new RecursoNoEncontradoException("Unidad de medida no encontrada con ID: " + id));
     }
 
-    // 5. Eliminar la unidad de medida por su ID
+    @Transactional
     public void eliminar(Integer id) {
         if (!unidadMedidaRepository.existsById(id)) {
             throw new RecursoNoEncontradoException("Unidad de medida no encontrada con ID: " + id);

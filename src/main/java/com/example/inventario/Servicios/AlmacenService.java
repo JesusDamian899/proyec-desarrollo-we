@@ -2,9 +2,10 @@ package com.example.inventario.Servicios;
 
 import com.example.inventario.DTOs.*;
 import com.example.inventario.Entidades.*;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
+import com.example.inventario.Excepciones.ReglaNegocioException;
 import com.example.inventario.Repositorios.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.inventario.Seguridad.UsuarioActualHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ public class AlmacenService {
     private final TransferenciaCabeceraRepository transferenciaCabeceraRepository;
     private final ProveedorRepository proveedorRepository;
     private final RepositorioUsuario repositorioUsuario;
+    private final UsuarioActualHelper usuarioActualHelper;
 
     public AlmacenService(ArticuloRepository articuloRepository,
                           UbicacionRepository ubicacionRepository,
@@ -40,7 +42,8 @@ public class AlmacenService {
                           SalidaProduccionCabeceraRepository salidaProduccionCabeceraRepository,
                           TransferenciaCabeceraRepository transferenciaCabeceraRepository,
                           ProveedorRepository proveedorRepository,
-                          RepositorioUsuario repositorioUsuario) {
+                          RepositorioUsuario repositorioUsuario,
+                          UsuarioActualHelper usuarioActualHelper) {
         this.articuloRepository = articuloRepository;
         this.ubicacionRepository = ubicacionRepository;
         this.loteRepository = loteRepository;
@@ -52,6 +55,7 @@ public class AlmacenService {
         this.transferenciaCabeceraRepository = transferenciaCabeceraRepository;
         this.proveedorRepository = proveedorRepository;
         this.repositorioUsuario = repositorioUsuario;
+        this.usuarioActualHelper = usuarioActualHelper;
     }
 
     @Transactional
@@ -384,21 +388,7 @@ public class AlmacenService {
     }
 
     private Usuario obtenerUsuarioActual() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            if (auth.getPrincipal() instanceof UsuarioAutenticado ua) {
-                return repositorioUsuario.findById(ua.getIdUsuario()).orElse(null);
-            }
-            if (auth.getName() != null) {
-                var porUsername = repositorioUsuario.findByUsername(auth.getName());
-                if (porUsername.isPresent()) {
-                    return porUsername.get();
-                }
-            }
-        }
-        return repositorioUsuario.findByUsername("admin")
-                .or(() -> repositorioUsuario.findAll().stream().findFirst())
-                .orElse(null);
+        return usuarioActualHelper.obtenerUsuarioActual();
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.inventario.Servicios;
 
+import com.example.inventario.DTOs.RolResponse;
 
 import java.util.List;
 

@@ -1,4 +1,5 @@
-package com.example.inventario.Servicios;
+package com.example.inventario.DTOs;
+
 import java.util.Set;
 
 public record RolResponse(

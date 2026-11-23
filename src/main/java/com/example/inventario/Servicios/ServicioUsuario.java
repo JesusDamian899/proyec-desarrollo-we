@@ -1,5 +1,8 @@
 package com.example.inventario.Servicios;
 
+import com.example.inventario.DTOs.UsuarioRequest;
+import com.example.inventario.DTOs.UsuarioResponse;
+
 import java.util.List;
 
 public interface ServicioUsuario {

@@ -1,8 +1,9 @@
 package com.example.inventario.Servicios;
 
-
+import com.example.inventario.DTOs.RolResponse;
 import com.example.inventario.Entidades.Permiso;
 import com.example.inventario.Entidades.Rol;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
 import com.example.inventario.Repositorios.RepositorioRol;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

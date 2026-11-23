@@ -1,4 +1,4 @@
-package com.example.inventario.Controladores;
+package com.example.inventario.Config;
 
 import com.example.inventario.DTOs.IngresoStockRequestDTO;
 import com.example.inventario.Entidades.Articulo;
@@ -22,7 +22,7 @@ import com.example.inventario.Servicios.AlmacenService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +35,9 @@ import java.util.Set;
 @Configuration
 public class CargaInicial {
 
+    private static final String HASH_PLACEHOLDER_SQL =
+            "$2a$10$7EqJtq98hPqEX7fNZaFWoOHi6M1T5pW3vJ8sL9mN2pQ4rS6tU8vW2";
+
     @Bean
     CommandLineRunner inicializar(RepositorioPermiso repoPermiso,
                                   RepositorioRol repoRol,
@@ -44,11 +47,11 @@ public class CargaInicial {
                                   UbicacionRepository repoUbicacion,
                                   ProveedorRepository repoProveedor,
                                   ArticuloRepository repoArticulo,
-                                  AlmacenService almacenService) {
+                                  AlmacenService almacenService,
+                                  PasswordEncoder passwordEncoder) {
         return args -> {
 
             if (repoPermiso.count() == 0) {
-                // ---------- PERMISOS ----------
                 crearPermiso(repoPermiso, "ARTICULO_VER", "Consultar stock", "Inventario", "/api/articulos", TipoPermiso.VER, true, 11);
                 crearPermiso(repoPermiso, "ARTICULO_GESTIONAR", "Crear y editar articulos", "Inventario", null, TipoPermiso.EDITAR, false, 12);
                 crearPermiso(repoPermiso, "STOCK_AJUSTAR", "Ajuste de inventario", "Inventario", "/api/ajustes", TipoPermiso.CREAR, true, 13);
@@ -76,11 +79,9 @@ public class CargaInicial {
                 crearPermiso(repoPermiso, "USUARIO_GESTIONAR", "Usuarios", "Seguridad", "/api/usuarios", TipoPermiso.VER, true, 71);
                 crearPermiso(repoPermiso, "ROL_GESTIONAR", "Roles y permisos", "Seguridad", "/api/roles", TipoPermiso.VER, true, 72);
 
-                // Mapa para buscar permisos por codigo
                 Map<String, Permiso> p = new HashMap<>();
                 repoPermiso.findAll().forEach(x -> p.put(x.getCodigo(), x));
 
-                // ---------- ROLES ----------
                 crearRol(repoRol, "ADMINISTRADOR", "Acceso total y gestion de usuarios",
                         new HashSet<>(p.values()));
 
@@ -104,24 +105,21 @@ public class CargaInicial {
                                 "REPORTE_VALORIZADO", "REPORTE_STOCK_MINIMO"));
 
                 System.out.println(">>> CARGA INICIAL DE PERMISOS Y ROLES COMPLETADA");
-            } else {
-                System.out.println(">>> Los permisos y roles ya existen en la BD.");
             }
 
-            // Asegurar siempre que los 5 usuarios iniciales existan y esten activos con sus credenciales
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            asegurarUsuario(repoUsuario, repoRol, encoder, "admin", "Admin2026*",
+            // Asegurar usuarios iniciales sin sobrescribir contraseñas personalizadas ya guardadas
+            asegurarUsuario(repoUsuario, repoRol, passwordEncoder, "admin", "Admin2026*",
                     "Administrador del Sistema", "admin@electromecanicaandina.com", "ADMINISTRADOR");
-            asegurarUsuario(repoUsuario, repoRol, encoder, "jefe.almacen", "Jefe2026*",
+            asegurarUsuario(repoUsuario, repoRol, passwordEncoder, "jefe.almacen", "Jefe2026*",
                     "Carlos Mendoza (Jefe de Almacen)", "cmendoza@electromecanicaandina.com", "JEFE_ALMACEN");
-            asegurarUsuario(repoUsuario, repoRol, encoder, "almacenero", "Almacen2026*",
+            asegurarUsuario(repoUsuario, repoRol, passwordEncoder, "almacenero", "Almacen2026*",
                     "Luis Paredes (Operador Almacen)", "lparedes@electromecanicaandina.com", "ALMACENERO");
-            asegurarUsuario(repoUsuario, repoRol, encoder, "solicitante", "Solicita2026*",
+            asegurarUsuario(repoUsuario, repoRol, passwordEncoder, "solicitante", "Solicita2026*",
                     "Ana Torres (Supervisora Produccion)", "atorres@electromecanicaandina.com", "SOLICITANTE");
-            asegurarUsuario(repoUsuario, repoRol, encoder, "costos", "Costos2026*",
+            asegurarUsuario(repoUsuario, repoRol, passwordEncoder, "costos", "Costos2026*",
                     "Jorge Ramirez (Analista de Costos)", "jramirez@electromecanicaandina.com", "COSTOS");
 
-            // ---------- CATALOGOS MAESTROS INICIALES ----------
+            // Catalogos maestros iniciales
             if (repoCategoria.count() == 0) {
                 crearCategoria(repoCategoria, "Materiales Electricos");
                 crearCategoria(repoCategoria, "Componentes Mecanicos");
@@ -189,27 +187,40 @@ public class CargaInicial {
     }
 
     private void asegurarUsuario(RepositorioUsuario repoUsuario, RepositorioRol repoRol,
-                                 BCryptPasswordEncoder encoder, String username, String rawPassword,
+                                 PasswordEncoder encoder, String username, String rawPassword,
                                  String nombreCompleto, String email, String rolNombre) {
-        Usuario u = repoUsuario.buscarConRolesYPermisos(username).orElseGet(Usuario::new);
-        u.setUsername(username);
-        u.setPasswordHash(encoder.encode(rawPassword));
-        u.setNombreCompleto(nombreCompleto);
-        if (u.getEmail() == null || u.getEmail().isBlank()) {
-            u.setEmail(email);
-        }
-        u.setActivo(true);
-        Set<Rol> rolesActualizados = new HashSet<>();
-        if (u.getRoles() != null) {
-            rolesActualizados.addAll(u.getRoles());
-        }
-        repoRol.findByNombre(rolNombre).ifPresent(rol -> {
-            if (rolesActualizados.stream().noneMatch(r -> r.getNombre().equals(rolNombre))) {
-                rolesActualizados.add(rol);
+        var existente = repoUsuario.buscarConRolesYPermisos(username);
+        if (existente.isPresent()) {
+            Usuario u = existente.get();
+            boolean requiereActualizar = false;
+            if (u.getPasswordHash() == null
+                    || u.getPasswordHash().isBlank()
+                    || HASH_PLACEHOLDER_SQL.equals(u.getPasswordHash())) {
+                u.setPasswordHash(encoder.encode(rawPassword));
+                requiereActualizar = true;
             }
-        });
-        u.setRoles(rolesActualizados);
-        repoUsuario.save(u);
+            if (u.getRoles() == null || u.getRoles().isEmpty()) {
+                Set<Rol> rolesActualizados = new HashSet<>();
+                repoRol.findByNombre(rolNombre).ifPresent(rolesActualizados::add);
+                u.setRoles(rolesActualizados);
+                requiereActualizar = true;
+            }
+            if (requiereActualizar) {
+                repoUsuario.save(u);
+            }
+            return;
+        }
+
+        Usuario nuevo = new Usuario();
+        nuevo.setUsername(username);
+        nuevo.setPasswordHash(encoder.encode(rawPassword));
+        nuevo.setNombreCompleto(nombreCompleto);
+        nuevo.setEmail(email);
+        nuevo.setActivo(true);
+        Set<Rol> roles = new HashSet<>();
+        repoRol.findByNombre(rolNombre).ifPresent(roles::add);
+        nuevo.setRoles(roles);
+        repoUsuario.save(nuevo);
     }
 
     private Articulo crearArticuloBase(ArticuloRepository repo, String codigo, String descripcion,
@@ -263,18 +274,18 @@ public class CargaInicial {
     }
 
     private void crearUnidad(UnidadMedidaRepository repo, String nombre, String abreviatura) {
-        UnidadMedida u = new UnidadMedida();
-        u.setNombre(nombre);
-        u.setAbreviatura(abreviatura);
-        repo.save(u);
+        UnidadMedida um = new UnidadMedida();
+        um.setNombre(nombre);
+        um.setAbreviatura(abreviatura);
+        repo.save(um);
     }
 
     private void crearUbicacion(UbicacionRepository repo, String nombre, String codigo, String tipo) {
-        Ubicacion ub = new Ubicacion();
-        ub.setNombre(nombre);
-        ub.setCodigo(codigo);
-        ub.setTipo(tipo);
-        repo.save(ub);
+        Ubicacion u = new Ubicacion();
+        u.setNombre(nombre);
+        u.setCodigo(codigo);
+        u.setTipo(tipo);
+        repo.save(u);
     }
 
     private void crearProveedor(ProveedorRepository repo, String razonSocial, String ruc, String contacto) {

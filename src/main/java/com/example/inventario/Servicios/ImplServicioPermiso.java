@@ -1,5 +1,8 @@
 package com.example.inventario.Servicios;
+
+import com.example.inventario.DTOs.PermisoResponse;
 import com.example.inventario.Entidades.Permiso;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
 import com.example.inventario.Repositorios.RepositorioPermiso;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

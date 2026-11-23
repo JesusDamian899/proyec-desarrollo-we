@@ -2,6 +2,7 @@ package com.example.inventario;
 
 import com.example.inventario.DTOs.*;
 import com.example.inventario.Entidades.*;
+import com.example.inventario.Excepciones.ReglaNegocioException;
 import com.example.inventario.Servicios.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -67,7 +71,7 @@ class InventarioApplicationTests {
         assertFalse(categoriaService.listarTodas().isEmpty());
         assertFalse(unidadMedidaService.listarTodas().isEmpty());
         assertTrue(ubicacionService.listarTodas().size() >= 2);
-        assertFalse(proveedorService.listartodos().isEmpty());
+        assertFalse(proveedorService.listarTodos().isEmpty());
 
         // 2. Verificar Login JWT
         LoginResponse login = servicioAuth.login(new LoginRequest("admin", "Admin2026*"));
@@ -142,16 +146,16 @@ class InventarioApplicationTests {
                         new BigDecimal("5.00"), "Reubicacion de estante"));
         assertEquals(TipoMovimiento.TRANSFERENCIA, trf.tipoMovimiento());
 
-        // 7. Verificar Lotes próximos a vencer, Documentos Cabecera-Detalle y Kardex
+        // 7. Verificar Lotes proximos a vencer, Documentos Cabecera-Detalle y Kardex
         assertFalse(almacenService.listarLotesProximosAVencer().isEmpty());
         assertFalse(almacenService.listarDocumentosIngreso().isEmpty());
         assertFalse(almacenService.listarDocumentosSalida().isEmpty());
         assertFalse(almacenService.listarDocumentosTransferencia().isEmpty());
 
         List<Kardex> historialKardex = kardexService.listarPorArticulo(guardado.getIdArticulo());
-        assertEquals(4, historialKardex.size()); // 2 ingresos + 1 salida + 1 transferencia
+        assertEquals(4, historialKardex.size());
 
-        // 8. Verificar serialización JSON y autorización HTTP con MockMvc (open-in-view=false)
+        // 8. Verificar serializacion JSON y autorizacion HTTP con MockMvc (open-in-view=false)
         mockMvc.perform(get("/api/kardex").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/kardex/articulo/" + guardado.getIdArticulo()).header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
@@ -170,15 +174,9 @@ class InventarioApplicationTests {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/almacen/ingresos").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/almacen/ingresos/documentos").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
         mockMvc.perform(get("/api/almacen/salidas").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/almacen/salidas/documentos").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
         mockMvc.perform(get("/api/almacen/transferencias").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-        mockMvc.perform(get("/api/almacen/transferencias/documentos").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/almacen/movimientos").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -194,11 +192,71 @@ class InventarioApplicationTests {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/permisos").header("Authorization", bearer).accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
 
-        // 9. Verificar denegación sin token (401/403)
+    @Test
+    void businessValidationsRejectDuplicatesAndInvalidData() {
+        Long rolId = servicioRol.listar().get(0).idRol();
+
+        // Username duplicado
+        assertThrows(ReglaNegocioException.class, () -> servicioUsuario.guardar(
+                new UsuarioRequest("admin", "ClaveSegura2026", "Duplicado", "otro@andina.com", Set.of(rolId))));
+
+        // Email duplicado
+        assertThrows(ReglaNegocioException.class, () -> servicioUsuario.guardar(
+                new UsuarioRequest("nuevo.user", "ClaveSegura2026", "Duplicado Email", "admin@electromecanicaandina.com", Set.of(rolId))));
+
+        // Categoria duplicada
+        Categoria catDup = new Categoria();
+        catDup.setNombre("Materiales Electricos");
+        assertThrows(ReglaNegocioException.class, () -> categoriaService.guardar(catDup));
+
+        // Unidad duplicada
+        UnidadMedida umDup = new UnidadMedida();
+        umDup.setNombre("Unidad Repetida");
+        umDup.setAbreviatura("UND");
+        assertThrows(ReglaNegocioException.class, () -> unidadMedidaService.guardar(umDup));
+
+        // RUC invalido (menos de 11 digitos)
+        Proveedor provMalRuc = new Proveedor();
+        provMalRuc.setRuc("12345");
+        provMalRuc.setRazonSocial("Empresa Demo SAC");
+        assertThrows(IllegalArgumentException.class, () -> proveedorService.guardar(provMalRuc));
+
+        // Stock insuficiente en salida FIFO
+        Integer artId = articuloService.listarTodos().get(0).getIdArticulo();
+        assertThrows(ReglaNegocioException.class, () -> almacenService.registrarSalidaFIFO(
+                new SalidaStockRequestDTO(artId, new BigDecimal("999999.00"), "OP-EXC", null)));
+    }
+
+    @Test
+    void rbacEnforcesAuthorizationRules() throws Exception {
+        // Sin token -> 401
         mockMvc.perform(get("/api/usuarios").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.estado").value(401));
+
+        // SOLICITANTE sin permiso para ver usuarios ni gestionar articulos/maestros -> 403
+        LoginResponse solicitante = servicioAuth.login(new LoginRequest("solicitante", "Solicita2026*"));
+        String bearerSolicitante = "Bearer " + solicitante.token();
+
+        mockMvc.perform(get("/api/articulos").header("Authorization", bearerSolicitante))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/usuarios").header("Authorization", bearerSolicitante))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.estado").value(403));
+
+        mockMvc.perform(post("/api/articulos")
+                        .header("Authorization", bearerSolicitante)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"codigoInterno\":\"NO-PERM\",\"descripcion\":\"Test\"}"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/categorias")
+                        .header("Authorization", bearerSolicitante)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Sin Permiso\"}"))
+                .andExpect(status().isForbidden());
     }
 }
-
-

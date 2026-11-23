@@ -1,17 +1,5 @@
 package com.example.inventario.Servicios;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.example.inventario.Entidades.Articulo;
 import com.example.inventario.Entidades.Categoria;
 import com.example.inventario.Entidades.EstadoLote;
@@ -22,42 +10,54 @@ import com.example.inventario.Entidades.TipoMovimiento;
 import com.example.inventario.Entidades.Ubicacion;
 import com.example.inventario.Entidades.UnidadMedida;
 import com.example.inventario.Entidades.Usuario;
-import com.example.inventario.Entidades.UsuarioAutenticado;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
+import com.example.inventario.Excepciones.ReglaNegocioException;
 import com.example.inventario.Repositorios.ArticuloRepository;
 import com.example.inventario.Repositorios.CategoriaRepository;
 import com.example.inventario.Repositorios.KardexRepository;
 import com.example.inventario.Repositorios.LoteRepository;
 import com.example.inventario.Repositorios.MovimientoInventarioRepository;
-import com.example.inventario.Repositorios.RepositorioUsuario;
 import com.example.inventario.Repositorios.UbicacionRepository;
 import com.example.inventario.Repositorios.UnidadMedidaRepository;
+import com.example.inventario.Seguridad.UsuarioActualHelper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ArticuloService {
 
-    @Autowired
-    private ArticuloRepository articuloRepository;
+    private final ArticuloRepository articuloRepository;
+    private final CategoriaRepository categoriaRepository;
+    private final UnidadMedidaRepository unidadMedidaRepository;
+    private final UbicacionRepository ubicacionRepository;
+    private final LoteRepository loteRepository;
+    private final MovimientoInventarioRepository movimientoRepository;
+    private final KardexRepository kardexRepository;
+    private final UsuarioActualHelper usuarioActualHelper;
 
-    @Autowired
-    private CategoriaRepository categoriaRepository;
-
-    @Autowired
-    private UnidadMedidaRepository unidadMedidaRepository;
-
-    @Autowired
-    private UbicacionRepository ubicacionRepository;
-
-    @Autowired
-    private LoteRepository loteRepository;
-
-    @Autowired
-    private MovimientoInventarioRepository movimientoRepository;
-
-    @Autowired
-    private KardexRepository kardexRepository;
-
-    @Autowired
-    private RepositorioUsuario repositorioUsuario;
+    public ArticuloService(ArticuloRepository articuloRepository,
+                           CategoriaRepository categoriaRepository,
+                           UnidadMedidaRepository unidadMedidaRepository,
+                           UbicacionRepository ubicacionRepository,
+                           LoteRepository loteRepository,
+                           MovimientoInventarioRepository movimientoRepository,
+                           KardexRepository kardexRepository,
+                           UsuarioActualHelper usuarioActualHelper) {
+        this.articuloRepository = articuloRepository;
+        this.categoriaRepository = categoriaRepository;
+        this.unidadMedidaRepository = unidadMedidaRepository;
+        this.ubicacionRepository = ubicacionRepository;
+        this.loteRepository = loteRepository;
+        this.movimientoRepository = movimientoRepository;
+        this.kardexRepository = kardexRepository;
+        this.usuarioActualHelper = usuarioActualHelper;
+    }
 
     @Transactional(readOnly = true)
     public List<Articulo> listarTodos() {
@@ -77,13 +77,17 @@ public class ArticuloService {
     @Transactional
     public Articulo guardar(Articulo articulo) {
         if (articulo.getCodigoInterno() == null || articulo.getCodigoInterno().isBlank()) {
-            throw new IllegalArgumentException("El código interno del artículo es obligatorio.");
+            throw new IllegalArgumentException("El codigo interno del articulo es obligatorio.");
+        }
+        if (articulo.getDescripcion() == null || articulo.getDescripcion().isBlank()) {
+            throw new IllegalArgumentException("La descripcion del articulo es obligatoria.");
         }
         articulo.setCodigoInterno(articulo.getCodigoInterno().trim());
+        articulo.setDescripcion(articulo.getDescripcion().trim());
 
-        // Validar que el código no exista previamente
         if (articuloRepository.existsByCodigoInterno(articulo.getCodigoInterno())) {
-            throw new IllegalArgumentException("Ya existe un artículo registrado con el código interno: " + articulo.getCodigoInterno());
+            throw new ReglaNegocioException(
+                    "Ya existe un articulo registrado con el codigo interno: " + articulo.getCodigoInterno());
         }
 
         resolverRelaciones(articulo);
@@ -91,14 +95,12 @@ public class ArticuloService {
         if (articulo.getStockActual() == null) {
             articulo.setStockActual(BigDecimal.ZERO);
         }
-
         if (articulo.getStockMinimo() == null) {
             articulo.setStockMinimo(BigDecimal.ZERO);
         }
 
         Articulo guardado = articuloRepository.save(articulo);
 
-        // Si se registra con stock inicial mayor a 0, crear su Lote inicial, Movimiento y Kardex para mantener consistencia FIFO
         if (guardado.getStockActual().compareTo(BigDecimal.ZERO) > 0 && guardado.getUbicacion() != null) {
             String codigoLoteInicial = "LOTE-INI-" + guardado.getCodigoInterno();
             Lote loteInicial = new Lote();
@@ -120,7 +122,7 @@ public class ArticuloService {
             mov.setFechaMovimiento(LocalDateTime.now());
             movimientoRepository.save(mov);
 
-            Usuario usuario = obtenerUsuarioActual();
+            Usuario usuario = usuarioActualHelper.obtenerUsuarioActual();
             if (usuario != null) {
                 Kardex kardex = new Kardex();
                 kardex.setArticulo(guardado);
@@ -137,22 +139,19 @@ public class ArticuloService {
         return guardado;
     }
 
-    // Actualizar datos del artículo
     @Transactional
     public Articulo actualizar(Integer id, Articulo datosActualizados) {
         return articuloRepository.findById(id).map(articuloExistente -> {
-
             if (datosActualizados.getCodigoInterno() != null && !datosActualizados.getCodigoInterno().isBlank()) {
                 String nuevoCodigo = datosActualizados.getCodigoInterno().trim();
-                if (!articuloExistente.getCodigoInterno().equalsIgnoreCase(nuevoCodigo) &&
-                    articuloRepository.existsByCodigoInterno(nuevoCodigo)) {
-                    throw new IllegalArgumentException("El código interno " + nuevoCodigo + " ya pertenece a otro artículo.");
+                if (!articuloExistente.getCodigoInterno().equalsIgnoreCase(nuevoCodigo)
+                        && articuloRepository.existsByCodigoInterno(nuevoCodigo)) {
+                    throw new ReglaNegocioException("El codigo interno " + nuevoCodigo + " ya pertenece a otro articulo.");
                 }
                 articuloExistente.setCodigoInterno(nuevoCodigo);
             }
-
-            if (datosActualizados.getDescripcion() != null) {
-                articuloExistente.setDescripcion(datosActualizados.getDescripcion());
+            if (datosActualizados.getDescripcion() != null && !datosActualizados.getDescripcion().isBlank()) {
+                articuloExistente.setDescripcion(datosActualizados.getDescripcion().trim());
             }
             if (datosActualizados.getCategoria() != null) {
                 articuloExistente.setCategoria(datosActualizados.getCategoria());
@@ -168,27 +167,23 @@ public class ArticuloService {
             }
 
             resolverRelaciones(articuloExistente);
-
             return articuloRepository.save(articuloExistente);
-        }).orElseThrow(() -> new RecursoNoEncontradoException("Artículo no encontrado con ID: " + id));
+        }).orElseThrow(() -> new RecursoNoEncontradoException("Articulo no encontrado con ID: " + id));
     }
 
-    // Eliminar un artículo por su ID
     @Transactional
     public void eliminar(Integer id) {
         if (!articuloRepository.existsById(id)) {
-            throw new RecursoNoEncontradoException("Artículo no encontrado con ID: " + id);
+            throw new RecursoNoEncontradoException("Articulo no encontrado con ID: " + id);
         }
         articuloRepository.deleteById(id);
     }
 
-    // Buscar artículos
     @Transactional(readOnly = true)
     public List<Articulo> buscarPorDescripcion(String texto) {
         return articuloRepository.findByDescripcionContainingIgnoreCase(texto);
     }
 
-    // Obtener lista de artículos con alerta de bajo stock
     @Transactional(readOnly = true)
     public List<Articulo> listarArticulosBajoStock() {
         return articuloRepository.findArticulosBajoStock();
@@ -197,36 +192,21 @@ public class ArticuloService {
     private void resolverRelaciones(Articulo articulo) {
         if (articulo.getCategoria() != null && articulo.getCategoria().getIdCategoria() != null) {
             Categoria cat = categoriaRepository.findById(articulo.getCategoria().getIdCategoria())
-                    .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada con ID: " + articulo.getCategoria().getIdCategoria()));
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Categoria no encontrada con ID: " + articulo.getCategoria().getIdCategoria()));
             articulo.setCategoria(cat);
         }
         if (articulo.getUnidadMedida() != null && articulo.getUnidadMedida().getIdUnidadMedida() != null) {
             UnidadMedida um = unidadMedidaRepository.findById(articulo.getUnidadMedida().getIdUnidadMedida())
-                    .orElseThrow(() -> new IllegalArgumentException("Unidad de medida no encontrada con ID: " + articulo.getUnidadMedida().getIdUnidadMedida()));
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Unidad de medida no encontrada con ID: " + articulo.getUnidadMedida().getIdUnidadMedida()));
             articulo.setUnidadMedida(um);
         }
         if (articulo.getUbicacion() != null && articulo.getUbicacion().getId() != null) {
             Ubicacion ub = ubicacionRepository.findById(articulo.getUbicacion().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Ubicación no encontrada con ID: " + articulo.getUbicacion().getId()));
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Ubicacion no encontrada con ID: " + articulo.getUbicacion().getId()));
             articulo.setUbicacion(ub);
         }
-    }
-
-    private Usuario obtenerUsuarioActual() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated()) {
-            if (auth.getPrincipal() instanceof UsuarioAutenticado ua) {
-                return repositorioUsuario.findById(ua.getIdUsuario()).orElse(null);
-            }
-            if (auth.getName() != null) {
-                var porUsername = repositorioUsuario.findByUsername(auth.getName());
-                if (porUsername.isPresent()) {
-                    return porUsername.get();
-                }
-            }
-        }
-        return repositorioUsuario.findByUsername("admin")
-                .or(() -> repositorioUsuario.findAll().stream().findFirst())
-                .orElse(null);
     }
 }

@@ -618,8 +618,8 @@ export class ApiService {
         if (!username) {
           return this.businessError('El nombre de usuario (username) es obligatorio.');
         }
-        if (!payload.password || payload.password.length < 6) {
-          return this.businessError('La contraseña debe tener al menos 6 caracteres.');
+        if (!payload.password || payload.password.length < 8) {
+          return this.businessError('La contraseña debe tener al menos 8 caracteres.');
         }
         if (db.usuarios.some((u) => u.username.toLowerCase() === username)) {
           return this.businessError(`El usuario '${username}' ya existe.`);

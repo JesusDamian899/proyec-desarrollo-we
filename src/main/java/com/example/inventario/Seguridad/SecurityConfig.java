@@ -1,18 +1,15 @@
 package com.example.inventario.Seguridad;
 
-import com.example.inventario.Controladores.JwtFiltro;
-import com.example.inventario.Servicios.DetalleUsuarioService;
-import tools.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import jakarta.servlet.DispatcherType;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -23,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,20 +73,48 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/favicon.ico", "/assets/**").permitAll()
+                .requestMatchers(
+                    "/", "/index.html", "/*.js", "/*.css", "/favicon.ico", "/assets/**",
+                    "/login", "/resumen", "/articulos", "/catalogos", "/proveedores", "/seguridad", "/almacen"
+                ).permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/auth/login").permitAll()
 
+                // Seguridad: Usuarios, Roles y Permisos
                 .requestMatchers("/api/permisos/**").hasAuthority("ROL_GESTIONAR")
                 .requestMatchers("/api/roles/**").hasAuthority("ROL_GESTIONAR")
                 .requestMatchers("/api/usuarios/**").hasAuthority("USUARIO_GESTIONAR")
-                .requestMatchers("/api/kardex/**").hasAuthority("KARDEX_VER")
 
+                // Kardex
+                .requestMatchers(HttpMethod.GET, "/api/kardex/**").hasAuthority("KARDEX_VER")
+                .requestMatchers(HttpMethod.POST, "/api/kardex/**")
+                    .hasAnyAuthority("STOCK_AJUSTAR", "INGRESO_CREAR", "SALIDA_ATENDER", "TRANSFER_CREAR")
+
+                // Articulos
                 .requestMatchers(HttpMethod.GET, "/api/articulos/**").hasAuthority("ARTICULO_VER")
-                .requestMatchers("/api/articulos/**").hasAnyAuthority("ARTICULO_GESTIONAR", "ARTICULO_VER")
+                .requestMatchers(HttpMethod.POST, "/api/articulos/**").hasAuthority("ARTICULO_GESTIONAR")
+                .requestMatchers(HttpMethod.PUT, "/api/articulos/**").hasAuthority("ARTICULO_GESTIONAR")
+                .requestMatchers(HttpMethod.DELETE, "/api/articulos/**").hasAuthority("ARTICULO_GESTIONAR")
 
+                // Catalogos maestros: Categorias, Unidades y Ubicaciones
+                .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/unidades-medida/**", "/api/ubicaciones/**")
+                    .authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/categorias/**", "/api/unidades-medida/**", "/api/ubicaciones/**")
+                    .hasAuthority("MAESTRO_GESTIONAR")
+                .requestMatchers(HttpMethod.PUT, "/api/categorias/**", "/api/unidades-medida/**", "/api/ubicaciones/**")
+                    .hasAuthority("MAESTRO_GESTIONAR")
+                .requestMatchers(HttpMethod.DELETE, "/api/categorias/**", "/api/unidades-medida/**", "/api/ubicaciones/**")
+                    .hasAuthority("MAESTRO_GESTIONAR")
+
+                // Proveedores
+                .requestMatchers(HttpMethod.GET, "/api/proveedores/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/proveedores/**").hasAuthority("PROVEEDOR_GESTIONAR")
+                .requestMatchers(HttpMethod.PUT, "/api/proveedores/**").hasAuthority("PROVEEDOR_GESTIONAR")
+                .requestMatchers(HttpMethod.DELETE, "/api/proveedores/**").hasAuthority("PROVEEDOR_GESTIONAR")
+
+                // Operaciones de Almacen (Ingresos, Salidas, Transferencias)
                 .requestMatchers(HttpMethod.GET, "/api/almacen/ingresos/**", "/api/ingresos/**")
                     .hasAnyAuthority("INGRESO_VER", "INGRESO_CREAR")
                 .requestMatchers(HttpMethod.POST, "/api/almacen/ingresos/**", "/api/ingresos/**")

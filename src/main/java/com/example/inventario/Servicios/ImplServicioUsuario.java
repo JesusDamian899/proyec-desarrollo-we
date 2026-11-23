@@ -1,7 +1,11 @@
 package com.example.inventario.Servicios;
 
+import com.example.inventario.DTOs.UsuarioRequest;
+import com.example.inventario.DTOs.UsuarioResponse;
 import com.example.inventario.Entidades.Rol;
 import com.example.inventario.Entidades.Usuario;
+import com.example.inventario.Excepciones.RecursoNoEncontradoException;
+import com.example.inventario.Excepciones.ReglaNegocioException;
 import com.example.inventario.Repositorios.RepositorioRol;
 import com.example.inventario.Repositorios.RepositorioUsuario;
 import org.springframework.security.crypto.password.PasswordEncoder;

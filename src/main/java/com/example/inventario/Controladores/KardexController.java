@@ -2,7 +2,6 @@ package com.example.inventario.Controladores;
 
 import com.example.inventario.Entidades.Kardex;
 import com.example.inventario.Servicios.KardexService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,16 +15,17 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class KardexController {
 
-    @Autowired
-    private KardexService kardexService;
+    private final KardexService kardexService;
 
-   
+    public KardexController(KardexService kardexService) {
+        this.kardexService = kardexService;
+    }
+
     @GetMapping
     public ResponseEntity<List<Kardex>> listarTodo() {
         return ResponseEntity.ok(kardexService.listarTodo());
     }
 
-    
     @GetMapping("/{id}")
     public ResponseEntity<Kardex> obtenerPorId(@PathVariable Integer id) {
         return kardexService.obtenerPorId(id)
@@ -33,18 +33,15 @@ public class KardexController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-   
     @GetMapping("/articulo/{idArticulo}")
     public ResponseEntity<List<Kardex>> listarPorArticulo(@PathVariable Integer idArticulo) {
         return ResponseEntity.ok(kardexService.listarPorArticulo(idArticulo));
     }
 
-
     @GetMapping("/tipo")
     public ResponseEntity<List<Kardex>> listarPorTipo(@RequestParam("movimiento") String movimiento) {
         return ResponseEntity.ok(kardexService.listarPorTipoMovimiento(movimiento));
     }
-
 
     @GetMapping("/fechas")
     public ResponseEntity<List<Kardex>> listarPorFechas(
@@ -55,7 +52,6 @@ public class KardexController {
 
     @PostMapping
     public ResponseEntity<Kardex> registrar(@RequestBody Kardex kardex) {
-        Kardex nuevo = kardexService.registrarMovimiento(kardex);
-        return new ResponseEntity<>(nuevo, HttpStatus.CREATED);
+        return new ResponseEntity<>(kardexService.registrarMovimiento(kardex), HttpStatus.CREATED);
     }
 }

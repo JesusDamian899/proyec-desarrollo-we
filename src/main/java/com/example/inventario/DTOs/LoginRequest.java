@@ -1,4 +1,4 @@
-package com.example.inventario.Servicios;
+package com.example.inventario.DTOs;
 
 import jakarta.validation.constraints.NotBlank;
 

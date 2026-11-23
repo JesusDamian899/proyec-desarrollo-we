@@ -1,8 +1,8 @@
 package com.example.inventario.Controladores;
 
-import com.example.inventario.Entidades.UsuarioAutenticado;
-import com.example.inventario.Servicios.LoginRequest;
-import com.example.inventario.Servicios.LoginResponse;
+import com.example.inventario.DTOs.LoginRequest;
+import com.example.inventario.DTOs.LoginResponse;
+import com.example.inventario.Seguridad.UsuarioAutenticado;
 import com.example.inventario.Servicios.ServicioAuth;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

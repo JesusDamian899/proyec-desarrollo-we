@@ -111,9 +111,13 @@ export class AuthService {
   hasPermiso(codigo: string): boolean {
     const s = this.session();
     if (!s) return false;
-    if (s.roles?.includes('ADMINISTRADOR') || s.roles?.includes('JEFE_ALMACEN')) return true;
+    if (s.roles?.includes('ADMINISTRADOR')) return true;
     return (
-      s.permisos?.some((p) => (typeof p === 'string' ? p === codigo : p.codigo === codigo)) ?? true
+      s.permisos?.some((p) => (typeof p === 'string' ? p === codigo : p.codigo === codigo)) ?? false
     );
+  }
+
+  hasAnyPermiso(...codigos: string[]): boolean {
+    return codigos.some((c) => this.hasPermiso(c));
   }
 }

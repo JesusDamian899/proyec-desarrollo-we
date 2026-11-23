@@ -1,8 +1,10 @@
 package com.example.inventario.Servicios;
 
-
-import com.example.inventario.Entidades.UsuarioAutenticado;
+import com.example.inventario.DTOs.LoginRequest;
+import com.example.inventario.DTOs.LoginResponse;
 import com.example.inventario.Repositorios.RepositorioUsuario;
+import com.example.inventario.Seguridad.JwtService;
+import com.example.inventario.Seguridad.UsuarioAutenticado;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

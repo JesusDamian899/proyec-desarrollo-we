@@ -1,10 +1,8 @@
-package com.example.inventario.Servicios;
-
+package com.example.inventario.Seguridad;
 
 import com.example.inventario.Entidades.Permiso;
 import com.example.inventario.Entidades.Rol;
 import com.example.inventario.Entidades.Usuario;
-import com.example.inventario.Entidades.UsuarioAutenticado;
 import com.example.inventario.Repositorios.RepositorioUsuario;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
